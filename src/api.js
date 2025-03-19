@@ -74,9 +74,9 @@ export const getStation = ({ queryKey }) => {
 };
 
 // Trip API calls
-export const searchTrips = (origin, destination, date, passengersCount = 1) =>
+export const searchTrips = (origin, destination, date) =>
     instance.get(
-        `station/trips/search/?origin=${origin}&destination=${destination}&date=${date}&passengers_count=${passengersCount}`
+        `station/trips/search/?origin=${origin}&destination=${destination}&date=${date}`
     ).then((response) => response.data);
 
 export const getTrip = async ({ queryKey }) => {
@@ -101,10 +101,10 @@ export const getMe = () =>
     instance.get(`user/me/`).then((response) => response.data);
 
 // Booking API calls
-export const createOrder = async (orderData) => {
+export const createOrder = async (ticketsData) => {
     const response = await instance.post(
         `booking/orders/`,
-        orderData,
+        ticketsData,
         {
             headers: {
                 "X-CSRFToken": Cookie.get("csrftoken") || "",
@@ -125,6 +125,39 @@ export const getOrder = async (orderId) => {
 export const getPassengerTypes = async () => {
     const response = await instance.get(`booking/passenger-types/`);
     return response.data;
+};
+
+// Получаем список вагонов для конкретного рейса и класса
+export const getWagonsForTrip = async (tripId, date, wagonClass) => {
+    const response = await instance.get(`station/trips/${tripId}/wagons/`, {
+        params: {
+            date: date,
+            class: wagonClass
+        }
+    });
+    return response.data;
+};
+
+// Получаем информацию о местах в конкретном вагоне
+export const getSeatsForWagon = async (tripId, wagonId, date) => {
+    const response = await instance.get(`station/trips/${tripId}/wagons/${wagonId}/seats/`, {
+        params: {
+            date: date
+        }
+    });
+    return response.data;
+};
+
+// Бронирование билетов
+export const bookTickets = async (ticketData) => {
+    console.log("Sending booking data to server:", JSON.stringify(ticketData, null, 2));
+    try {
+        const response = await instance.post('booking/orders/', ticketData);
+        return response.data;
+    } catch (error) {
+        console.error("Error booking tickets:", error.response?.data || error);
+        throw error;
+    }
 };
 
 // Fallback mock functions for development
@@ -283,30 +316,35 @@ export const getMockPassengerTypes = async () => {
 
     return [
         {
+            id: 1,
             code: "adult",
             name: "Adult",
             discount_percent: 0,
             requires_document: true
         },
         {
+            id: 2,
             code: "child",
             name: "Child (2-12 years)",
             discount_percent: 50,
             requires_document: false
         },
         {
+            id: 3,
             code: "infant",
             name: "Infant (under 2 years)",
             discount_percent: 100,
             requires_document: false
         },
         {
+            id: 4,
             code: "senior",
             name: "Senior (65+ years)",
             discount_percent: 30,
             requires_document: true
         },
         {
+            id: 5,
             code: "student",
             name: "Student",
             discount_percent: 20,
@@ -468,4 +506,57 @@ export const getMockOrder = async (orderId) => {
     } else {
         throw new Error("Order not found");
     }
+};
+
+// Моковые данные для разработки
+export const getMockWagonsForTrip = async (tripId, date, wagonClass) => {
+    // Имитация задержки сети
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // Возвращаем только один вагон для соответствия реальным данным API
+    return [
+        {
+            id: 1,
+            number: "1",
+            type: wagonClass,
+            available_seats: 20,
+            total_seats: 24
+        }
+    ];
+};
+
+export const getMockSeatsForWagon = async (tripId, wagonId, date) => {
+    // Имитация задержки сети
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // Генерируем места для вагона
+    const seats = [];
+    const totalSeats = 24;
+
+    for (let i = 1; i <= totalSeats; i++) {
+        const isOccupied = Math.random() > 0.7; // 30% мест занято
+
+        seats.push({
+            id: i, // Используем простые числовые ID
+            number: i,
+            occupied: isOccupied
+        });
+    }
+
+    console.log(`Generated mock seats for wagon ${wagonId}:`, seats);
+    return seats;
+};
+
+export const getMockBookTickets = async (ticketsData) => {
+    // Имитация задержки сети
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Имитируем успешное бронирование
+    return {
+        id: "mock-" + Math.floor(Math.random() * 1000000),
+        booking_date: new Date().toISOString(),
+        status: "confirmed",
+        tickets: ticketsData.tickets,
+        total_price: ticketsData.tickets.length * 200
+    };
 }; 

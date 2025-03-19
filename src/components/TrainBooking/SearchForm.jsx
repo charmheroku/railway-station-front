@@ -2,61 +2,38 @@ import {
   Box,
   Button,
   FormControl,
-  FormLabel,
   Grid,
   GridItem,
   Input,
   InputGroup,
   InputLeftElement,
-  NumberDecrementStepper,
-  NumberIncrementStepper,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-  Select,
   useToast,
   Icon,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  PopoverBody,
-  Text,
 } from "@chakra-ui/react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getStations } from "../../api";
 import { formatDate } from "../../lib/utils";
-import { FaMapMarkerAlt, FaCalendarAlt, FaUsers } from "react-icons/fa";
+import { FaMapMarkerAlt, FaCalendarAlt } from "react-icons/fa";
 
 export default function SearchForm() {
   const [formData, setFormData] = useState({
     from: "",
     to: "",
     departDate: formatDate(new Date()),
-    returnDate: "",
-    passengers: 1,
   });
-  
-  const [isPassengersOpen, setIsPassengersOpen] = useState(false);
   
   const navigate = useNavigate();
   const toast = useToast();
   
-  const { data: stations, isLoading } = useQuery(["stations"], getStations);
+  const { isLoading } = useQuery(["stations"], getStations);
   
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }));
-  };
-  
-  const handlePassengersChange = (value) => {
-    setFormData((prev) => ({
-      ...prev,
-      passengers: value,
     }));
   };
   
@@ -86,7 +63,7 @@ export default function SearchForm() {
     }
     
     navigate(
-      `/search?from=${formData.from}&to=${formData.to}&date=${formData.departDate}&passengers=${formData.passengers}`
+      `/search?from=${formData.from}&to=${formData.to}&date=${formData.departDate}`
     );
   };
   
@@ -163,63 +140,6 @@ export default function SearchForm() {
                 placeholder="Depart Date"
               />
             </InputGroup>
-          </FormControl>
-        </GridItem>
-        
-        {/* Travellers, Class */}
-        <GridItem>
-          <FormControl>
-            <Popover
-              isOpen={isPassengersOpen}
-              onClose={() => setIsPassengersOpen(false)}
-              placement="bottom"
-              closeOnBlur={true}
-            >
-              <PopoverTrigger>
-                <InputGroup onClick={() => setIsPassengersOpen(!isPassengersOpen)}>
-                  <InputLeftElement pointerEvents="none">
-                    <Icon as={FaUsers} color="gray.400" />
-                  </InputLeftElement>
-                  <Input
-                    readOnly
-                    value={`${formData.passengers} Traveller${formData.passengers > 1 ? 's' : ''}, Class`}
-                    variant="filled"
-                    bg="gray.100"
-                    _hover={{ bg: "gray.200" }}
-                    cursor="pointer"
-                    h="50px"
-                    fontSize="md"
-                  />
-                </InputGroup>
-              </PopoverTrigger>
-              <PopoverContent p={4} width="300px">
-                <PopoverBody>
-                  <Box mb={4}>
-                    <Text fontWeight="bold" mb={2}>Passengers</Text>
-                    <NumberInput
-                      min={1}
-                      max={10}
-                      value={formData.passengers}
-                      onChange={handlePassengersChange}
-                    >
-                      <NumberInputField />
-                      <NumberInputStepper>
-                        <NumberIncrementStepper />
-                        <NumberDecrementStepper />
-                      </NumberInputStepper>
-                    </NumberInput>
-                  </Box>
-                  <Box>
-                    <Text fontWeight="bold" mb={2}>Class</Text>
-                    <Select defaultValue="economy">
-                      <option value="economy">Economy</option>
-                      <option value="business">Business</option>
-                      <option value="first">First Class</option>
-                    </Select>
-                  </Box>
-                </PopoverBody>
-              </PopoverContent>
-            </Popover>
           </FormControl>
         </GridItem>
         

@@ -13,7 +13,6 @@ import {
   VStack,
   HStack,
   Grid,
-  Radio,
   RadioGroup,
   useColorModeValue,
   Divider,
@@ -125,13 +124,30 @@ export default function TrainAvailabilityModal({ isOpen, onClose, train }) {
     const dateInfo = getSelectedDateInfo();
     if (!dateInfo || !selectedClass) return;
     
+    // Получаем информацию о выбранной дате и рейсе
+    const selectedTripInfo = dateInfo.trip_info || train;
+    
+    // Извлекаем дату из времени отправления выбранной даты
+    const departureDate = new Date(dateInfo.departure_time);
+    const departureDateStr = departureDate.toISOString().split('T')[0];
+    
+    // Убедимся, что отправляем на страницу бронирования именно ту дату, 
+    // которая соответствует выбранному блоку с датой
     onClose();
-    navigate(`/trips/${train.id}/booking`, {
+    navigate(`/trips/${selectedTripInfo.id}/seats`, {
       state: {
         selectedClass,
-        selectedDate: new Date(dateInfo.departure_time).toISOString().split('T')[0],
+        // Используем дату отправления из выбранной даты
+        selectedDate: departureDateStr,
+        actualDepartureTime: dateInfo.departure_time,  // Передаем полное время отправления
         price: getClassPrice(),
-        passengersCount
+        passengersCount,
+        // Добавляем полную информацию о выбранном рейсе с правильными датами
+        tripInfo: {
+          ...selectedTripInfo,
+          departure_time: dateInfo.departure_time,
+          arrival_time: dateInfo.arrival_time
+        }
       }
     });
   };
@@ -295,6 +311,7 @@ export default function TrainAvailabilityModal({ isOpen, onClose, train }) {
                   <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={3}>
                     {tripData && tripData.wagon_types && tripData.wagon_types.map((wagonType) => {
                       const className = wagonType.name;
+                      const fareMultiplier = wagonType.fare_multiplier;
                       const isAvailable = isClassAvailable(className);
                       const availableSeats = getAvailableSeats(className);
                       const dateInfo = getSelectedDateInfo();
@@ -319,6 +336,9 @@ export default function TrainAvailabilityModal({ isOpen, onClose, train }) {
                               <Text fontWeight="bold">{className}</Text>
                               <Text fontSize="sm" color="gray.600">
                                 {isAvailable ? `${availableSeats} seats available` : "No seats available"}
+                              </Text>
+                              <Text fontSize="xs" color="gray.500">
+                                Fare multiplier: x{fareMultiplier}
                               </Text>
                             </VStack>
                             <Text fontWeight="bold" color="blue.500">

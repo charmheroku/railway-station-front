@@ -446,13 +446,14 @@ export default function AdminTrips() {
                   <Th>Arrival</Th>
                   <Th>Duration</Th>
                   <Th>Base Price</Th>
+                  <Th>Wagon Types</Th>
                   <Th>Actions</Th>
                 </Tr>
               </Thead>
               <Tbody>
                 {trips.length === 0 ? (
                   <Tr>
-                    <Td colSpan={9} textAlign="center">
+                    <Td colSpan={10} textAlign="center">
                       No trips found
                     </Td>
                   </Tr>
@@ -467,6 +468,19 @@ export default function AdminTrips() {
                       <Td>{formatDateTime(trip.arrival_time)}</Td>
                       <Td>{trip.duration_minutes ? `${Math.floor(trip.duration_minutes / 60)}h ${trip.duration_minutes % 60}m` : calculateDuration(trip.departure_time, trip.arrival_time)}</Td>
                       <Td>{trip.base_price}</Td>
+                      <Td>
+                        {trip.wagon_types && trip.wagon_types.length > 0 ? (
+                          <HStack spacing={1} flexWrap="wrap">
+                            {trip.wagon_types.map(type => (
+                              <Text key={type.id} fontSize="sm">
+                                {type.name} (x{type.fare_multiplier})
+                              </Text>
+                            ))}
+                          </HStack>
+                        ) : (
+                          <Text fontSize="sm" color="gray.500">No types</Text>
+                        )}
+                      </Td>
                       <Td>
                         <HStack spacing={2}>
                           <IconButton

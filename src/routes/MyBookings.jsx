@@ -6,14 +6,7 @@ import {
   Heading,
   HStack,
   Spinner,
-  Stack,
-  Table,
-  Tbody,
-  Td,
   Text,
-  Th,
-  Thead,
-  Tr,
   VStack,
   useColorModeValue,
   Badge,
@@ -26,7 +19,7 @@ import {
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getUserOrders, getMockUserOrders } from "../api";
+import { getMyOrders } from "../api";
 import { formatTime, formatDate, formatDuration } from "../lib/utils";
 import { useUser } from "../lib/useUser";
 import { FiChevronRight, FiCalendar, FiClock } from "react-icons/fi";
@@ -34,17 +27,21 @@ import { FiChevronRight, FiCalendar, FiClock } from "react-icons/fi";
 export default function MyBookings() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { user, isLoggedIn, userLoading: isUserLoading } = useUser();
+  const { isLoggedIn, userLoading: isUserLoading } = useUser();
+  
+  // Определяем цвета на верхнем уровне компонента
+  const borderColor = useColorModeValue("gray.200", "gray.600");
+  const bgColor = useColorModeValue("white", "gray.700");
   
   // Получаем список заказов пользователя
   const { data: orders, isLoading, error } = useQuery(
     ["userOrders"],
     () => {
       // В реальном приложении используем API
-      // return getUserOrders();
+      return getMyOrders();
       
       // Для разработки используем моковые данные
-      return getMockUserOrders();
+      //return getMockUserOrders();
     },
     {
       enabled: isLoggedIn,
@@ -130,8 +127,8 @@ export default function MyBookings() {
             p={6}
             borderWidth="1px"
             borderRadius="lg"
-            borderColor={useColorModeValue("gray.200", "gray.600")}
-            bg={useColorModeValue("white", "gray.700")}
+            borderColor={borderColor}
+            bg={bgColor}
             textAlign="center"
           >
             <Text fontSize="lg" mb={4}>You don't have any bookings yet.</Text>
@@ -144,82 +141,111 @@ export default function MyBookings() {
           </Box>
         ) : (
           <VStack spacing={4} align="stretch">
-            {orders.map((order) => (
-              <Box
-                key={order.id}
-                p={4}
-                borderWidth="1px"
-                borderRadius="lg"
-                borderColor={useColorModeValue("gray.200", "gray.600")}
-                bg={useColorModeValue("white", "gray.700")}
-                _hover={{
-                  boxShadow: "md",
-                  cursor: "pointer",
-                  borderColor: "blue.300"
-                }}
-                onClick={() => navigate(`/bookings/${order.id}`)}
-              >
-                <Flex justify="space-between" align="center" mb={2}>
-                  <HStack>
-                    <Text fontWeight="bold">{order.trip.train_name}</Text>
-                    <Text color="gray.500">({order.trip.train_number})</Text>
-                  </HStack>
-                  
-                  <Badge colorScheme={getStatusColor(order.status)} px={2} py={1}>
-                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                  </Badge>
-                </Flex>
-                
-                <Divider my={2} />
-                
-                <Flex justify="space-between" align="center" mt={2}>
-                  <Box>
-                    <HStack spacing={4}>
-                      <VStack align="flex-start" spacing={0}>
-                        <Text fontSize="md" fontWeight="bold">
-                          {formatTime(order.trip.departure_time)}
-                        </Text>
-                        <Text>{order.trip.origin}</Text>
-                      </VStack>
-                      
-                      <Text mx={2}>→</Text>
-                      
-                      <VStack align="flex-start" spacing={0}>
-                        <Text fontSize="md" fontWeight="bold">
-                          {formatTime(order.trip.arrival_time)}
-                        </Text>
-                        <Text>{order.trip.destination}</Text>
-                      </VStack>
+            {orders.map((order) => {
+              // Получаем данные о поездке, если они доступны
+              const hasTickets = order.tickets && order.tickets.length > 0;
+              const trip = hasTickets ? order.tickets[0].trip : null;
+              
+              return (
+                <Box
+                  key={order.id}
+                  p={4}
+                  borderWidth="1px"
+                  borderRadius="lg"
+                  borderColor={borderColor}
+                  bg={bgColor}
+                  _hover={{
+                    boxShadow: "md",
+                    cursor: "pointer",
+                    borderColor: "blue.300"
+                  }}
+                  onClick={() => navigate(`/bookings/${order.id}`)}
+                >
+                  <Flex justify="space-between" align="center" mb={2}>
+                    <HStack>
+                      {trip ? (
+                        <>
+                          <Text fontWeight="bold">{trip.train.name || 'Unknown Train'}</Text>
+                          <Text color="gray.500">({trip.train.number || 'N/A'})</Text>
+                        </>
+                      ) : (
+                        <Text fontWeight="bold">Empty Order</Text>
+                      )}
                     </HStack>
                     
-                    <HStack mt={2} color="gray.500" fontSize="sm">
-                      <Icon as={FiCalendar} />
-                      <Text>{order.travel_date}</Text>
-                      
-                      <Icon as={FiClock} ml={2} />
-                      <Text>
-                        {formatDuration(
-                          (new Date(order.trip.arrival_time) - new Date(order.trip.departure_time)) / 60000
-                        )}
-                      </Text>
-                    </HStack>
-                  </Box>
+                    <Badge colorScheme={getStatusColor(order.status)} px={2} py={1}>
+                      {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Unknown'}
+                    </Badge>
+                  </Flex>
                   
-                  <VStack align="flex-end" spacing={1}>
-                    <Text fontWeight="bold" color="blue.500">
-                      ${order.total_price.toFixed(2)}
-                    </Text>
-                    <Text fontSize="sm">
-                      {order.passengers.length} passenger(s)
-                    </Text>
-                    <HStack>
-                      <Text fontSize="sm" color="blue.500">View Details</Text>
-                      <Icon as={FiChevronRight} color="blue.500" />
-                    </HStack>
-                  </VStack>
-                </Flex>
-              </Box>
-            ))}
+                  <Divider my={2} />
+                  
+                  {trip ? (
+                    <Flex justify="space-between" align="center" mt={2}>
+                      <Box>
+                        <HStack spacing={4}>
+                          <VStack align="flex-start" spacing={0}>
+                            <Text fontSize="md" fontWeight="bold">
+                              {formatTime(trip.departure_time || '00:00')}
+                            </Text>
+                            <Text>{trip.route.origin_station || 'Unknown Origin'}</Text>
+                          </VStack>
+                          
+                          <Text mx={2}>→</Text>
+                          
+                          <VStack align="flex-start" spacing={0}>
+                            <Text fontSize="md" fontWeight="bold">
+                              {formatTime(trip.arrival_time || '00:00')}
+                            </Text>
+                            <Text>{trip.route.destination_station || 'Unknown Destination'}</Text>
+                          </VStack>
+                        </HStack>
+                        
+                        <HStack mt={2} color="gray.500" fontSize="sm">
+                          <Icon as={FiCalendar} />
+                          <Text>{hasTickets ? formatDate(trip.departure_time) : 'No date'}</Text>
+                          
+                          <Icon as={FiClock} ml={2} />
+                          <Text>
+                            {formatDuration(
+                              trip.arrival_time && trip.departure_time
+                                ? (new Date(trip.arrival_time) - new Date(trip.departure_time)) / 60000
+                                : 0
+                            )}
+                          </Text>
+                        </HStack>
+                      </Box>
+                      
+                      <VStack align="flex-end" spacing={1}>
+                        <Text fontWeight="bold" color="blue.500">
+                          ${parseFloat(order.total_price || 0).toFixed(2)}
+                        </Text>
+                        <Text fontSize="sm">
+                          {order.tickets.length} ticket(s)
+                        </Text>
+                        <HStack>
+                          <Text fontSize="sm" color="blue.500">View Details</Text>
+                          <Icon as={FiChevronRight} color="blue.500" />
+                        </HStack>
+                      </VStack>
+                    </Flex>
+                  ) : (
+                    <Flex justify="space-between" align="center" mt={2}>
+                      <Text color="gray.500">No ticket information available</Text>
+                      <VStack align="flex-end" spacing={1}>
+                        <Text fontWeight="bold" color="blue.500">
+                          ${parseFloat(order.total_price || 0).toFixed(2)}
+                        </Text>
+                        <HStack>
+                          <Text fontSize="sm" color="blue.500">View Details</Text>
+                          <Icon as={FiChevronRight} color="blue.500" />
+                        </HStack>
+                      </VStack>
+                    </Flex>
+                  )}
+                </Box>
+              );
+            })}
           </VStack>
         )}
         

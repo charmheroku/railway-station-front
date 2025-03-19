@@ -6,6 +6,9 @@ import { useState } from "react";
 export default function Home() {
   const [tabIndex, setTabIndex] = useState(2); // Устанавливаем поезда как активную вкладку
 
+  // Мы не используем эту функцию в Home, так как форма поиска обрабатывается в компоненте SearchForm
+  // Код удален, чтобы избежать ошибок с неопределенной переменной formData
+
   return (
     <Box>
       {/* Навигационные вкладки */}

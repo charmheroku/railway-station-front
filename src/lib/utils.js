@@ -1,12 +1,28 @@
 export const formatDate = (date, includeDay = false) => {
-    if (includeDay) {
+    if (!date) return "";
+
+    try {
         const d = new Date(date);
-        const day = d.getDate();
-        const month = d.getMonth() + 1;
-        const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
-        return `${day} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month - 1]} ${day}, ${dayOfWeek}`;
+
+        if (isNaN(d.getTime())) {
+            // If date is not valid, return original string
+            return date;
+        }
+
+        if (includeDay) {
+            const day = d.getDate();
+            const month = d.getMonth() + 1;
+            const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
+            return `${day} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month - 1]} ${day}, ${dayOfWeek}`;
+        }
+
+        // Format as a more readable date (e.g., March 21, 2025)
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        return d.toLocaleDateString(undefined, options);
+    } catch (error) {
+        console.error("Error formatting date:", error);
+        return date || "";
     }
-    return new Date(date).toISOString().split("T")[0];
 };
 
 export const formatTime = (time) => {

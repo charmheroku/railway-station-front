@@ -2,22 +2,12 @@ import {
   Box,
   Button,
   Container,
-  Divider,
   Flex,
   Grid,
   Heading,
   HStack,
-  Image,
-  Link,
   Spinner,
-  Stack,
-  Table,
-  Tbody,
-  Td,
   Text,
-  Th,
-  Thead,
-  Tr,
   VStack,
   useColorModeValue,
   Badge,
@@ -28,10 +18,10 @@ import {
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getOrder, getMockOrder } from "../api";
 import { formatTime, formatDate, formatDuration } from "../lib/utils";
 import { useUser } from "../lib/useUser";
 import { FiDownload, FiPrinter } from "react-icons/fi";
+import { getOrder } from "../api";
 
 export default function BookingDetails() {
   const { orderId } = useParams();
@@ -39,15 +29,19 @@ export default function BookingDetails() {
   const toast = useToast();
   const { user, isLoggedIn, userLoading: isUserLoading } = useUser();
   
+  // Определяем цвета на верхнем уровне компонента
+  const borderColor = useColorModeValue("gray.200", "gray.600");
+  const bgColor = useColorModeValue("white", "gray.700");
+  
   // Получаем информацию о заказе
   const { data: order, isLoading, error } = useQuery(
     ["order", orderId],
     () => {
       // В реальном приложении используем API
-      // return getOrder(orderId);
+      return getOrder(orderId);
       
       // Для разработки используем моковые данные
-      return getMockOrder(orderId);
+      //return getMockOrder(orderId);
     },
     {
       enabled: !!orderId,
@@ -183,42 +177,48 @@ export default function BookingDetails() {
           p={6}
           borderWidth="1px"
           borderRadius="lg"
-          borderColor={useColorModeValue("gray.200", "gray.600")}
-          bg={useColorModeValue("white", "gray.700")}
+          borderColor={borderColor}
+          bg={bgColor}
         >
           <Flex justify="space-between" align="center" mb={4}>
             <Heading size="md">Booking Summary</Heading>
-            <Badge colorScheme={getStatusColor(order.status)} fontSize="md" px={2} py={1}>
-              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+            <Badge colorScheme={getStatusColor(order?.status)} fontSize="md" px={2} py={1}>
+              {order?.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Unknown'}
             </Badge>
           </Flex>
           
           <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={6}>
             <Box>
               <Text fontWeight="bold">Booking ID</Text>
-              <Text>{order.id}</Text>
+              <Text>{order?.id || 'N/A'}</Text>
               
               <Text fontWeight="bold" mt={3}>Booking Date</Text>
-              <Text>{formatDate(order.created_at)}</Text>
+              <Text>{order?.created_at ? formatDate(order.created_at) : 'N/A'}</Text>
               
               <Text fontWeight="bold" mt={3}>Travel Date</Text>
-              <Text>{order.travel_date}</Text>
+              <Text>{order?.tickets?.[0]?.trip?.departure_time 
+                ? formatDate(order.tickets[0].trip.departure_time) 
+                : 'N/A'}</Text>
               
               <Text fontWeight="bold" mt={3}>Class</Text>
-              <Text>{order.wagon_class}</Text>
+              <Text>{order?.tickets?.[0]?.wagon?.wagon_type || 'N/A'}</Text>
             </Box>
             
             <Box>
               <Text fontWeight="bold">Total Amount</Text>
               <Text fontSize="xl" fontWeight="bold" color="blue.500">
-                ${order.total_price.toFixed(2)}
+                ${typeof order?.total_price === 'string' 
+                    ? parseFloat(order.total_price).toFixed(2) 
+                    : typeof order?.total_price === 'number' 
+                      ? order.total_price.toFixed(2) 
+                      : '0.00'}
               </Text>
               
               <Text fontWeight="bold" mt={3}>Passengers</Text>
-              <Text>{order.passengers.length} passenger(s)</Text>
+              <Text>{order?.tickets?.length || 0} passenger(s)</Text>
               
               <Text fontWeight="bold" mt={3}>Contact</Text>
-              <Text>{user?.email || "Not available"}</Text>
+              <Text>{order?.user || user?.email || "Not available"}</Text>
             </Box>
           </Grid>
         </Box>
@@ -228,148 +228,148 @@ export default function BookingDetails() {
           p={6}
           borderWidth="1px"
           borderRadius="lg"
-          borderColor={useColorModeValue("gray.200", "gray.600")}
-          bg={useColorModeValue("white", "gray.700")}
+          borderColor={borderColor}
+          bg={bgColor}
         >
           <Heading size="md" mb={4}>Trip Details</Heading>
           
-          <Box>
-            <Text fontWeight="bold">{order.trip.train_name} ({order.trip.train_number})</Text>
-            
-            <HStack mt={4} spacing={8}>
-              <VStack align="flex-start" spacing={0}>
-                <Text fontSize="lg" fontWeight="bold">
-                  {formatTime(order.trip.departure_time)}
-                </Text>
-                <Text>{order.trip.origin}</Text>
-                <Text color="gray.500" fontSize="sm">
-                  {formatDate(order.trip.departure_time, true)}
-                </Text>
-              </VStack>
+          {order?.tickets?.length > 0 ? (
+            <Box>
+              <Text fontWeight="bold">
+                {order.tickets[0]?.trip?.train?.name || 'Unknown Train'} ({order.tickets[0]?.trip?.train?.number || 'N/A'})
+              </Text>
               
-              <VStack align="center" spacing={0}>
-                <Text fontSize="sm" color="gray.500">
-                  {order.trip.duration || formatDuration(
-                    (new Date(order.trip.arrival_time) - new Date(order.trip.departure_time)) / 60000
-                  )}
-                </Text>
-                <Box w="100px" h="2px" bg="gray.300" my={2} />
-                <Text fontSize="sm" color="gray.500">Direct</Text>
-              </VStack>
-              
-              <VStack align="flex-start" spacing={0}>
-                <Text fontSize="lg" fontWeight="bold">
-                  {formatTime(order.trip.arrival_time)}
-                </Text>
-                <Text>{order.trip.destination}</Text>
-                <Text color="gray.500" fontSize="sm">
-                  {formatDate(order.trip.arrival_time, true)}
-                </Text>
-              </VStack>
-            </HStack>
-          </Box>
+              <HStack mt={4} spacing={8}>
+                <VStack align="flex-start" spacing={0}>
+                  <Text fontSize="lg" fontWeight="bold">
+                    {order.tickets[0]?.trip?.departure_time ? formatTime(order.tickets[0].trip.departure_time) : 'N/A'}
+                  </Text>
+                  <Text>{order.tickets[0]?.trip?.route?.origin_station || 'Unknown Origin'}</Text>
+                  <Text color="gray.500" fontSize="sm">
+                    {order.tickets[0]?.trip?.departure_time ? formatDate(order.tickets[0].trip.departure_time, true) : 'N/A'}
+                  </Text>
+                </VStack>
+                
+                <VStack align="center" spacing={0}>
+                  <Text fontSize="sm" color="gray.500">
+                    {order.tickets[0]?.trip?.arrival_time && order.tickets[0]?.trip?.departure_time
+                      ? formatDuration(
+                          (new Date(order.tickets[0].trip.arrival_time) - new Date(order.tickets[0].trip.departure_time)) / 60000
+                        )
+                      : 'N/A'}
+                  </Text>
+                  <Box w="150px" h="2px" bg="gray.200" my={2} />
+                  <Text fontSize="sm" color="gray.500">{order.tickets[0]?.trip?.stops || 0} stops</Text>
+                </VStack>
+                
+                <VStack align="flex-start" spacing={0}>
+                  <Text fontSize="lg" fontWeight="bold">
+                    {order.tickets[0]?.trip?.arrival_time ? formatTime(order.tickets[0].trip.arrival_time) : 'N/A'}
+                  </Text>
+                  <Text>{order.tickets[0]?.trip?.route?.destination_station || 'Unknown Destination'}</Text>
+                  <Text color="gray.500" fontSize="sm">
+                    {order.tickets[0]?.trip?.arrival_time ? formatDate(order.tickets[0].trip.arrival_time, true) : 'N/A'}
+                  </Text>
+                </VStack>
+              </HStack>
+            </Box>
+          ) : (
+            <Text>No trip information available</Text>
+          )}
         </Box>
         
-        {/* Passenger Details */}
+        {/* Passenger Information */}
         <Box
           p={6}
           borderWidth="1px"
           borderRadius="lg"
-          borderColor={useColorModeValue("gray.200", "gray.600")}
-          bg={useColorModeValue("white", "gray.700")}
+          borderColor={borderColor}
+          bg={bgColor}
         >
-          <Heading size="md" mb={4}>Passenger Details</Heading>
+          <Heading size="md" mb={4}>Passenger Information</Heading>
           
-          <Table variant="simple">
-            <Thead>
-              <Tr>
-                <Th>Name</Th>
-                <Th>Type</Th>
-                <Th>Document</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {order.passengers.map((passenger, index) => (
-                <Tr key={index}>
-                  <Td>{passenger.first_name} {passenger.last_name}</Td>
-                  <Td>{passenger.passenger_type.charAt(0).toUpperCase() + passenger.passenger_type.slice(1)}</Td>
-                  <Td>{passenger.document || "N/A"}</Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+          {order?.tickets?.length > 0 ? (
+            order.tickets.map((ticket, index) => (
+              <Box 
+                key={index}
+                p={4}
+                borderWidth="1px"
+                borderRadius="md"
+                borderColor={borderColor}
+                bg={bgColor}
+                mb={index < (order.tickets.length || 0) - 1 ? 4 : 0}
+              >
+                <Flex justify="space-between" wrap="wrap">
+                  <Box mb={3} minW="200px">
+                    <Text fontWeight="bold">Passenger Name</Text>
+                    <Text>{ticket?.passenger_name || 'N/A'}</Text>
+                  </Box>
+                  
+                  <Box mb={3} minW="200px">
+                    <Text fontWeight="bold">Document</Text>
+                    <Text>{ticket?.passenger_document || 'N/A'}</Text>
+                  </Box>
+                  
+                  <Box mb={3} minW="200px">
+                    <Text fontWeight="bold">Passenger Type</Text>
+                    <Text>{ticket?.passenger_type?.name || 'N/A'}</Text>
+                  </Box>
+                  
+                  <Box mb={3} minW="200px">
+                    <Text fontWeight="bold">Seat</Text>
+                    <Text>Wagon {ticket?.wagon?.number || 'N/A'}, Seat {ticket?.seat_number || 'N/A'}</Text>
+                  </Box>
+                  
+                  <Box mb={3} minW="200px">
+                    <Text fontWeight="bold">Price</Text>
+                    <Text>${typeof ticket?.price === 'string' ? parseFloat(ticket.price).toFixed(2) : typeof ticket?.price === 'number' ? ticket.price.toFixed(2) : '0.00'}</Text>
+                  </Box>
+                </Flex>
+              </Box>
+            ))
+          ) : (
+            <Text>No passenger information available</Text>
+          )}
         </Box>
         
-        {/* Tickets */}
-        {order.tickets && order.tickets.length > 0 && (
-          <Box
-            p={6}
-            borderWidth="1px"
-            borderRadius="lg"
-            borderColor={useColorModeValue("gray.200", "gray.600")}
-            bg={useColorModeValue("white", "gray.700")}
-          >
-            <Heading size="md" mb={4}>Tickets</Heading>
-            
-            <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={6}>
-              {order.tickets.map((ticket, index) => (
-                <Box
-                  key={index}
-                  p={4}
-                  borderWidth="1px"
-                  borderRadius="md"
-                  borderColor={useColorModeValue("gray.200", "gray.600")}
-                  bg={useColorModeValue("gray.50", "gray.800")}
-                >
-                  <Flex justify="space-between">
-                    <VStack align="flex-start" spacing={2}>
-                      <Text fontWeight="bold">Ticket #{ticket.id}</Text>
-                      <Text>Passenger: {ticket.passenger_name}</Text>
-                      <Text>Wagon: {ticket.wagon_number}</Text>
-                      <Text>Seat: {ticket.seat_number}</Text>
-                    </VStack>
-                    
-                    {ticket.qr_code && (
-                      <Image
-                        src={ticket.qr_code}
-                        alt="Ticket QR Code"
-                        boxSize="100px"
-                      />
-                    )}
-                  </Flex>
-                </Box>
-              ))}
-            </Grid>
-          </Box>
-        )}
-        
-        {/* Actions */}
-        <Flex justify="space-between" mt={4}>
-          <Button
-            variant="outline"
-            onClick={() => navigate("/bookings")}
-          >
-            Back to My Bookings
-          </Button>
+        {/* Additional Information */}
+        <Box
+          p={6}
+          borderWidth="1px"
+          borderRadius="lg"
+          borderColor={borderColor}
+          bg={bgColor}
+        >
+          <Heading size="md" mb={4}>Additional Information</Heading>
           
-          {order.status === "confirmed" && (
-            <Button
-              colorScheme="red"
-              variant="outline"
-              onClick={() => {
-                toast({
-                  title: "Not implemented",
-                  description: "Cancellation functionality is not implemented in this demo",
-                  status: "info",
-                  duration: 5000,
-                  isClosable: true,
-                });
-              }}
-            >
-              Cancel Booking
-            </Button>
-          )}
-        </Flex>
+          <Box>
+            <Text fontWeight="bold">Refund Policy</Text>
+            <Text mb={3}>
+              Tickets can be refunded up to 24 hours before departure with a 10% fee.
+              Cancellations made less than 24 hours before departure are subject to a 50% fee.
+            </Text>
+            
+            <Text fontWeight="bold">Check-in Information</Text>
+            <Text mb={3}>
+              Please arrive at the station at least 30 minutes before departure.
+              Bring a valid ID matching the passenger information for each traveler.
+            </Text>
+            
+            <Text fontWeight="bold">Contact Information</Text>
+            <Text>
+              For any questions or assistance, please contact our support team at
+              support@railwaystation.com or call +1 (555) 123-4567.
+            </Text>
+          </Box>
+        </Box>
+        
+        <Button
+          variant="outline"
+          onClick={() => navigate("/bookings")}
+          alignSelf="flex-start"
+        >
+          Back to My Bookings
+        </Button>
       </VStack>
     </Container>
   );

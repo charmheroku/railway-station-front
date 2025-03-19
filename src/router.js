@@ -21,6 +21,7 @@ import AdminWagonAmenities from "./routes/AdminWagonAmenities";
 import AdminPassengerTypes from "./routes/AdminPassengerTypes";
 import AdminWagons from "./routes/AdminWagons";
 import AdminTrips from "./routes/AdminTrips";
+import SeatSelection from "./routes/SeatSelection";
 
 const router = createBrowserRouter([
     {
@@ -53,6 +54,14 @@ const router = createBrowserRouter([
                 element: (
                     <ProtectedPage>
                         <BookingForm />
+                    </ProtectedPage>
+                ),
+            },
+            {
+                path: "trips/:tripId/seats",
+                element: (
+                    <ProtectedPage>
+                        <SeatSelection />
                     </ProtectedPage>
                 ),
             },

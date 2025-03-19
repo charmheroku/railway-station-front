@@ -33,7 +33,6 @@ export default function SearchResults() {
   const from = searchParams.get("from");
   const to = searchParams.get("to");
   const date = searchParams.get("date");
-  const passengers = searchParams.get("passengers") || "1";
   
   const [filteredTrips, setFilteredTrips] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -48,10 +47,10 @@ export default function SearchResults() {
   
   // Используем API для поиска поездов
   const { isLoading, data: trips } = useQuery(
-    ["trips", from, to, date, passengers],
+    ["trips", from, to, date],
     () => {
       // В реальном приложении используем API
-      return searchTrips(from, to, date, parseInt(passengers));
+      return searchTrips(from, to, date);
     },
     {
       enabled: !!from && !!to && !!date,
@@ -81,13 +80,17 @@ export default function SearchResults() {
       // Проверяем доступность выбранных классов
       let hasSelectedClass = true;
       if (filters.selectedClasses.length > 0) {
-        hasSelectedClass = filters.selectedClasses.some(classType => {
-          // Проверяем доступность класса в поезде
-          if (trip.available_seats_by_class) {
-            return trip.available_seats_by_class[classType] > 0;
-          }
-          return false;
-        });
+        // Проверяем наличие выбранных типов вагонов в поезде
+        hasSelectedClass = trip.wagon_types && trip.wagon_types.some(wagonType => 
+          filters.selectedClasses.includes(wagonType.name)
+        );
+        
+        // Если wagon_types отсутствует, проверяем available_seats_by_class (для обратной совместимости)
+        if (!hasSelectedClass && trip.available_seats_by_class) {
+          hasSelectedClass = filters.selectedClasses.some(classType => 
+            trip.available_seats_by_class[classType] > 0
+          );
+        }
       }
       
       return isInDepartureRange && isInArrivalRange && hasSelectedClass;
@@ -181,7 +184,7 @@ export default function SearchResults() {
                 <InputLeftElement pointerEvents="none">
                   <FaUsers color="gray.300" />
                 </InputLeftElement>
-                <Input placeholder="Travellers, Class" value={`${passengers} Traveller(s)`} readOnly bg="white" />
+                <Input placeholder="Travellers, Class" value="1 Traveller" readOnly bg="white" />
               </InputGroup>
               
               <Button colorScheme="blue" px={8} onClick={() => navigate("/")}>

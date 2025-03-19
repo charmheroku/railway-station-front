@@ -164,11 +164,8 @@ export default function SearchFilter({ onFilterChange }) {
                 onChange={handleClassChange}
               >
                 <Stack spacing={2} direction="column">
-                  <Checkbox value="first_class">First Class</Checkbox>
-                  <Checkbox value="second_class">Second Class</Checkbox>
-                  <Checkbox value="first_class_sleeper">First Class Sleeper (SL)</Checkbox>
-                  <Checkbox value="second_class_sleeper">Second Class Sleeper (SL)</Checkbox>
-                  <Checkbox value="business">Business</Checkbox>
+                  <Checkbox value="Lux">Lux (x1.50)</Checkbox>
+                  <Checkbox value="Normal">Normal (x1.00)</Checkbox>
                 </Stack>
               </CheckboxGroup>
             </AccordionPanel>

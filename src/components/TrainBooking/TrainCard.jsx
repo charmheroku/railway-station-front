@@ -3,19 +3,15 @@ import {
   Button,
   Flex,
   Grid,
-  HStack,
   Text,
   VStack,
   useColorModeValue,
-  Badge,
   useDisclosure
 } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
-import { formatTime, formatDate, formatDuration } from "../../lib/utils";
+import { formatTime, formatDate, formatDuration, calculateDuration } from "../../lib/utils";
 import TrainAvailabilityModal from "./TrainAvailabilityModal";
 
 export default function TrainCard({ train }) {
-  const navigate = useNavigate();
   const { isOpen, onOpen, onClose } = useDisclosure();
   
   const cardBg = useColorModeValue("white", "gray.700");
@@ -28,11 +24,18 @@ export default function TrainCard({ train }) {
   // Получаем данные из новой структуры
   const trainName = train.train?.name || train.train_name;
   const trainNumber = train.train?.number || train.train_number;
-  const origin = train.route?.origin_station?.name || train.origin;
-  const destination = train.route?.destination_station?.name || train.destination;
+  const origin = train.route?.origin_station?.name || train.origin_station;
+  const destination = train.route?.destination_station?.name || train.destination_station;
   const price = train.base_price || train.price;
-  const durationText = train.duration || formatDuration(train.duration_in_minutes);
+  
+  // Правильно получаем длительность
+  const durationText = train.duration_minutes ? 
+    formatDuration(train.duration_minutes) : 
+    calculateDuration(train.departure_time, train.arrival_time);
+    
   const stops = train.stops || "Multiple";
+  
+  console.log("Train duration:", train.duration_minutes, "Duration text:", durationText);
   
   return (
     <>
@@ -76,6 +79,9 @@ export default function TrainCard({ train }) {
               
               {/* Duration */}
               <VStack spacing={1} px={4} alignItems="center">
+                <Text fontSize="sm" fontWeight="bold" color="gray.600">
+                  Duration
+                </Text>
                 <Text fontSize="sm" color="gray.600">
                   {durationText}
                 </Text>
@@ -104,7 +110,7 @@ export default function TrainCard({ train }) {
                   />
                 </Box>
                 <Text fontSize="sm" color="gray.600">
-                  {stops} Stops
+                  {stops}
                 </Text>
               </VStack>
               

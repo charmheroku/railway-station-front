@@ -22,7 +22,7 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getTrip, getTripAvailability, createOrder, getMockPassengerTypes } from "../api";
+import { getTrip, getTripAvailability, createOrder, getPassengerTypes } from "../api";
 import { formatTime, formatDate, formatDuration } from "../lib/utils";
 import { useUser } from "../lib/useUser";
 
@@ -43,19 +43,21 @@ export default function BookingForm() {
   const selectedDate = location.state?.selectedDate || new Date().toISOString().split("T")[0];
   const selectedPrice = location.state?.price || 0;
   const passengersCount = location.state?.passengersCount || 1;
+  const tripInfo = location.state?.tripInfo;
   
   // Состояние для пассажиров
   const [passengers, setPassengers] = useState(Array(passengersCount).fill().map(() => ({
     firstName: "", lastName: "", document: "", type: "adult"
   })));
   
-  // Получаем информацию о поездке
+  // Получаем информацию о поездке только если она не передана в location state
   const { data: trip, isLoading: isTripLoading } = useQuery(
     ["trip", tripId],
     () => getTrip({ queryKey: ["trip", tripId] }),
     {
-      enabled: !!tripId,
+      enabled: !!tripId && !tripInfo,
       staleTime: 60000,
+      initialData: tripInfo // Используем переданные данные как начальные
     }
   );
   
@@ -74,10 +76,10 @@ export default function BookingForm() {
     ["passengerTypes"],
     () => {
       // В реальном приложении используем API
-      // return getPassengerTypes();
+      return getPassengerTypes();
       
       // Для разработки используем моковые данные
-      return getMockPassengerTypes();
+      //return getMockPassengerTypes();
     },
     {
       staleTime: 300000, // Кэшируем на 5 минут
@@ -196,7 +198,7 @@ export default function BookingForm() {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Проверяем заполнение формы
+    // Проверяем заполнение всех полей
     const isFormValid = passengers.every(p => 
       p.firstName.trim() !== "" && 
       p.lastName.trim() !== "" && 
@@ -214,42 +216,62 @@ export default function BookingForm() {
       return;
     }
     
-    // Создаем данные для заказа
-    const orderData = {
-      trip: tripId,
-      travel_date: selectedDate,
-      wagon_class: selectedClass,
-      passengers: passengers.map(p => ({
-        first_name: p.firstName,
-        last_name: p.lastName,
-        document: p.document,
-        passenger_type: p.type
-      })),
-      total_price: calculateTotalPrice()
+    // Получаем выбранный вагон для класса (первый доступный)
+    const selectedWagonType = availability?.wagon_types?.find(wt => wt.name === selectedClass);
+    const firstAvailableWagon = selectedWagonType?.wagons?.[0];
+
+    // Создаем данные для заказа в формате tickets
+    const ticketsData = {
+      tickets: passengers.map((p, index) => {
+        // Найдем соответствующий тип пассажира
+        const passengerTypeObj = passengerTypes?.find(pt => pt.code === p.type);
+        
+        return {
+          trip: parseInt(tripId),
+          // Если нет конкретного вагона, используем первый доступный вагон выбранного класса
+          wagon: firstAvailableWagon ? parseInt(firstAvailableWagon.id) : null,
+          // Если не выбрано конкретное место, используем временный индекс
+          seat_number: (index + 1),
+          passenger_type: passengerTypeObj ? parseInt(passengerTypeObj.id) : 0,
+          passenger_name: `${p.firstName} ${p.lastName}`,
+          passenger_document: p.document
+        };
+      })
     };
     
+    console.log("Sending booking data:", JSON.stringify(ticketsData, null, 2));
+    
     // Отправляем заказ
-    createOrderMutation.mutate(orderData);
+    createOrderMutation.mutate(ticketsData);
   };
   
   // Получаем данные из новой структуры
   const getTrainInfo = () => {
-    if (!trip) return { name: "", number: "", origin: "", destination: "" };
+    // Если нет данных о поездке, возвращаем пустые значения
+    if (!trip && !tripInfo) return { name: "", number: "", origin: "", destination: "" };
     
+    // Первым делом используем данные, которые были переданы через location state
+    // Это будут актуальные данные с правильной датой
+    const actualTripInfo = location.state?.tripInfo || trip;
+    
+    // В итоге данные берем именно из переданной информации о поездке
     return {
-      name: trip.train_name || "",
-      number: trip.train_number || "",
-      origin: trip.origin_station || "",
-      destination: trip.destination_station || "",
-      departureTime: trip.departure_time || "",
-      arrivalTime: trip.arrival_time || "",
-      duration: formatDuration(trip.duration_minutes) || ""
+      name: actualTripInfo.train_name || "",
+      number: actualTripInfo.train_number || "",
+      origin: actualTripInfo.origin_station || "",
+      destination: actualTripInfo.destination_station || "",
+      departureTime: location.state?.actualDepartureTime || actualTripInfo.departure_time || "",
+      arrivalTime: actualTripInfo.arrival_time || "",
+      duration: formatDuration(actualTripInfo.duration_minutes) || ""
     };
   };
   
   const trainInfo = getTrainInfo();
   const isLoading = isTripLoading || isAvailabilityLoading || isPassengerTypesLoading || isUserLoading;
   const totalPrice = calculateTotalPrice();
+  
+  // Получаем данные о поездке
+  const actualTripInfo = trip || tripInfo;
   
   if (isLoading) {
     return (
@@ -326,7 +348,7 @@ export default function BookingForm() {
             
             <Box>
               <Text fontWeight="bold">Booking Details</Text>
-              <Text mt={2}>Date: {selectedDate}</Text>
+              <Text mt={2}>Date: {formatDate(trainInfo.departureTime ? new Date(trainInfo.departureTime) : selectedDate)}</Text>
               <Text>Class: {selectedClass}</Text>
               <Text>Price per ticket: ${getClassPrice()}</Text>
               <Text>Passengers: {passengersCount}</Text>
@@ -418,21 +440,33 @@ export default function BookingForm() {
               
               <Divider />
               
-              <Flex justify="space-between" align="center">
-                <Text fontWeight="bold" fontSize="lg">
-                  Total: ${totalPrice.toFixed(2)}
-                </Text>
+              <Flex mt={6} justify="space-between">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(-1)}
+                >
+                  Cancel
+                </Button>
                 
                 <HStack>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => navigate(`/trips/${tripId}`)}
+                  <Button
+                    colorScheme="blue"
+                    variant="outline"
+                    onClick={() => navigate(`/trips/${tripId}/seats`, {
+                      state: {
+                        selectedClass,
+                        selectedDate,
+                        price: getClassPrice(),
+                        passengersCount,
+                        tripInfo: actualTripInfo
+                      }
+                    })}
                   >
-                    Cancel
+                    Select Seats
                   </Button>
                   
-                  <Button 
-                    colorScheme="blue" 
+                  <Button
+                    colorScheme="blue"
                     type="submit"
                     isLoading={createOrderMutation.isLoading}
                   >
