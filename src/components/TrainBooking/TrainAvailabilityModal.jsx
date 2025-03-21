@@ -140,7 +140,7 @@ export default function TrainAvailabilityModal({ isOpen, onClose, train }) {
         // Используем дату отправления из выбранной даты
         selectedDate: departureDateStr,
         actualDepartureTime: dateInfo.departure_time,  // Передаем полное время отправления
-        price: getClassPrice(),
+        price: basePrice,
         passengersCount,
         // Добавляем полную информацию о выбранном рейсе с правильными датами
         tripInfo: {
@@ -359,12 +359,10 @@ export default function TrainAvailabilityModal({ isOpen, onClose, train }) {
                 <Flex justifyContent="space-between" alignItems="center">
                   <Text fontWeight="medium">Total Fare:</Text>
                   <Text fontWeight="bold" fontSize="xl">
-                    ${getClassPrice() * passengersCount}
+                    ${getClassPrice()}
                   </Text>
                 </Flex>
-                <Text fontSize="sm" color="gray.500" textAlign="right">
-                  ${getClassPrice()} × {passengersCount} passenger{passengersCount > 1 ? 's' : ''}
-                </Text>
+                
               </Box>
             </VStack>
           )}

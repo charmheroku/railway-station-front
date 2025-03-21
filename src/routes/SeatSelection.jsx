@@ -175,26 +175,21 @@ export default function SeatSelection() {
   const getWagonsFromAvailability = async () => {
     console.log("Getting wagons from availability data for trip:", currentTripId);
     
-    // Проверяем наличие объекта availability
     if (!availability) {
       console.log("No availability data yet");
       return [];
     }
     
-    // Ищем вагоны для текущей даты в dates_availability
     if (availability.dates_availability && Array.isArray(availability.dates_availability)) {
-      // Находим информацию о доступности для выбранной даты
       const dateInfo = availability.dates_availability.find(d => d.departure_date === selectedDate);
       
       if (dateInfo) {
         console.log("Found date info for selected date:", dateInfo);
         
-        // Если у даты указан ID маршрута, отличный от текущего, обновляем
         if (dateInfo.trip_id && dateInfo.trip_id !== currentTripId) {
           console.log(`Updating trip ID from ${currentTripId} to ${dateInfo.trip_id}`);
           setCurrentTripId(dateInfo.trip_id);
           
-          // Обновляем информацию о маршруте, если она доступна
           if (dateInfo.trip_info) {
             setCurrentTripInfo(dateInfo.trip_info);
           }
@@ -203,103 +198,49 @@ export default function SeatSelection() {
         // Проверяем наличие выбранного класса
         if (dateInfo.classes && dateInfo.classes[selectedClass]) {
           const classInfo = dateInfo.classes[selectedClass];
-          console.log("Found wagons for selected class:", classInfo);
+          console.log("Found class info:", classInfo);
           
-          // Создаем один вагон с данными из API
-          return [{
-            id: classInfo.wagon_id,
-            number: "1",
-            type: selectedClass,
-            available_seats: classInfo.available_seats,
-            total_seats: classInfo.total_seats
-          }];
-        } else {
-          console.log(`No wagons found for class '${selectedClass}', checking other classes`);
-          
-          // Если класс не найден, ищем любой доступный класс
-          const availableClasses = Object.keys(dateInfo.classes || {});
-          if (availableClasses.length > 0) {
-            const firstAvailableClass = availableClasses[0];
-            console.log(`Using first available class: ${firstAvailableClass}`);
+          // Получаем информацию о вагонах для выбранного класса
+          if (classInfo.wagons && Array.isArray(classInfo.wagons)) {
+            // Если есть массив вагонов, возвращаем его
+            return classInfo.wagons.map(wagon => ({
+              id: wagon.id,
+              number: wagon.number.toString(),
+              type: selectedClass,
+              available_seats: wagon.available_seats,
+              total_seats: wagon.total_seats || 20,
+              type_id: wagon.type_id
+            }));
+          } else {
+            // Если нет массива вагонов, создаем вагоны на основе информации о классе
+            // Предполагаем, что может быть несколько вагонов
+            const wagonsCount = Math.ceil(classInfo.total_seats / 20); // Предполагаем, что в вагоне около 20 мест
+            const wagons = [];
             
-            // Обновляем выбранный класс
-            setSelectedClass(firstAvailableClass);
+            for (let i = 0; i < wagonsCount; i++) {
+              const seatsInThisWagon = Math.min(20, classInfo.total_seats - i * 20);
+              const availableSeatsInThisWagon = Math.min(
+                seatsInThisWagon,
+                Math.ceil(classInfo.available_seats * (seatsInThisWagon / classInfo.total_seats))
+              );
+              
+              wagons.push({
+                id: classInfo.wagon_id + i, // Увеличиваем ID для каждого вагона
+                number: (i + 1).toString(),
+                type: selectedClass,
+                available_seats: availableSeatsInThisWagon,
+                total_seats: seatsInThisWagon,
+                type_id: classInfo.type_id
+              });
+            }
             
-            const classInfo = dateInfo.classes[firstAvailableClass];
-            return [{
-              id: classInfo.wagon_id,
-              number: "1",
-              type: firstAvailableClass,
-              available_seats: classInfo.available_seats,
-              total_seats: classInfo.total_seats
-            }];
+            return wagons;
           }
         }
-      } else {
-        console.log(`No availability info found for date '${selectedDate}', using first available date`);
-        
-        // Если дата не найдена, используем первую доступную дату
-        if (availability.dates_availability.length > 0) {
-          const firstDateInfo = availability.dates_availability[0];
-          console.log("Using first available date:", firstDateInfo.departure_date);
-          
-          // Обновляем выбранную дату
-          setSelectedDate(firstDateInfo.departure_date);
-          
-          // Если у даты указан ID маршрута, отличный от текущего, обновляем
-          if (firstDateInfo.trip_id && firstDateInfo.trip_id !== currentTripId) {
-            console.log(`Updating trip ID from ${currentTripId} to ${firstDateInfo.trip_id}`);
-            setCurrentTripId(firstDateInfo.trip_id);
-            
-            // Обновляем информацию о маршруте, если она доступна
-            if (firstDateInfo.trip_info) {
-              setCurrentTripInfo(firstDateInfo.trip_info);
-            }
-          }
-          
-          // Проверяем наличие классов для этой даты
-          if (firstDateInfo.classes) {
-            const availableClasses = Object.keys(firstDateInfo.classes);
-            if (availableClasses.length > 0) {
-              const firstClass = availableClasses[0];
-              console.log(`Using class: ${firstClass}`);
-              
-              // Обновляем выбранный класс
-              setSelectedClass(firstClass);
-              
-              const classInfo = firstDateInfo.classes[firstClass];
-              return [{
-                id: classInfo.wagon_id,
-                number: "1",
-                type: firstClass,
-                available_seats: classInfo.available_seats,
-                total_seats: classInfo.total_seats
-              }];
-            }
-          }
-        }
-      }
-    } else if (availability.wagon_types && Array.isArray(availability.wagon_types)) {
-      // Резервный путь для старого формата данных
-      console.log("Using wagon_types fallback");
-      
-      // Ищем вагон для выбранного класса
-      const wagonTypeInfo = availability.wagon_types.find(wt => wt.name === selectedClass);
-      
-      if (wagonTypeInfo) {
-        console.log("Found wagon type for selected class:", wagonTypeInfo);
-        
-        // Создаем вагон-заглушку
-        return [{
-          id: wagonTypeInfo.id || 1,
-          number: "1",
-          type: selectedClass,
-          available_seats: 20,
-          total_seats: 24
-        }];
       }
     }
     
+    // Если не удалось получить информацию о вагонах, возвращаем пустой массив
     console.log("No wagons found in availability data");
     return [];
   };
@@ -864,7 +805,7 @@ export default function SeatSelection() {
               <Text fontWeight="bold">Booking Details</Text>
               <Text mt={2}>Date: {formatDate(selectedDate)}</Text>
               <Text>Class: {selectedClass}</Text>
-              <Text>Price per ticket: ${selectedPrice}</Text>
+              <Text>Total price: ${availability?.dates_availability?.[0]?.classes?.[selectedClass]?.price_for_passengers}</Text>
               <Text>Passengers: {passengersCount}</Text>
             </Box>
           </Grid>

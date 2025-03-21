@@ -414,7 +414,7 @@ export default function AdminWagons() {
       const token = localStorage.getItem("token");
       const wagonData = {
         train: parseInt(currentWagon.train),
-        type: parseInt(currentWagon.wagon_type),
+        wagon_type: parseInt(currentWagon.wagon_type),
         number: currentWagon.number,
         seats: parseInt(currentWagon.capacity),
         amenities: amenityIds,
