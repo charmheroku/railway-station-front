@@ -21,21 +21,18 @@ export default function TrainCard({ train }) {
     onOpen();
   };
   
-  // Получаем данные из новой структуры
   const trainName = train.train?.name || train.train_name;
   const trainNumber = train.train?.number || train.train_number;
   const origin = train.route?.origin_station?.name || train.origin_station;
   const destination = train.route?.destination_station?.name || train.destination_station;
   const price = train.base_price || train.price;
   
-  // Правильно получаем длительность
   const durationText = train.duration_minutes ? 
     formatDuration(train.duration_minutes) : 
     calculateDuration(train.departure_time, train.arrival_time);
     
   const stops = train.stops || "Multiple";
   
-  console.log("Train duration:", train.duration_minutes, "Duration text:", durationText);
   
   return (
     <>

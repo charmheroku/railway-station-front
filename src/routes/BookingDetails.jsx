@@ -29,18 +29,18 @@ export default function BookingDetails() {
   const toast = useToast();
   const { user, isLoggedIn, userLoading: isUserLoading } = useUser();
   
-  // Определяем цвета на верхнем уровне компонента
+  // Define colors at the top level of the component
   const borderColor = useColorModeValue("gray.200", "gray.600");
   const bgColor = useColorModeValue("white", "gray.700");
   
-  // Получаем информацию о заказе
+  // Get order information
   const { data: order, isLoading, error } = useQuery(
     ["order", orderId],
     () => {
-      // В реальном приложении используем API
+      // In real application, use API
       return getOrder(orderId);
       
-      // Для разработки используем моковые данные
+      // For development, use mock data
       //return getMockOrder(orderId);
     },
     {
@@ -59,7 +59,7 @@ export default function BookingDetails() {
     }
   );
   
-  // Проверяем, авторизован ли пользователь
+  // Check if user is authorized
   useEffect(() => {
     if (!isUserLoading && !isLoggedIn) {
       toast({
@@ -73,12 +73,12 @@ export default function BookingDetails() {
     }
   }, [isUserLoading, isLoggedIn, navigate, orderId, toast]);
   
-  // Функция для печати билетов
+  // Function for printing tickets
   const handlePrint = () => {
     window.print();
   };
   
-  // Функция для скачивания билетов (в реальном приложении)
+  // Function for downloading tickets (in real application)
   const handleDownload = () => {
     toast({
       title: "Download started",
@@ -88,10 +88,10 @@ export default function BookingDetails() {
       isClosable: true,
     });
     
-    // В реальном приложении здесь был бы запрос на скачивание PDF
+    // In real application, here would be a request to download PDF
   };
   
-  // Получаем цвет статуса заказа
+  // Get status color
   const getStatusColor = (status) => {
     switch (status) {
       case "confirmed":

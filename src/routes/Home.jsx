@@ -4,14 +4,11 @@ import { FaHotel, FaPlane, FaTrain, FaBus, FaCar } from "react-icons/fa";
 import { useState } from "react";
 
 export default function Home() {
-  const [tabIndex, setTabIndex] = useState(2); // Устанавливаем поезда как активную вкладку
-
-  // Мы не используем эту функцию в Home, так как форма поиска обрабатывается в компоненте SearchForm
-  // Код удален, чтобы избежать ошибок с неопределенной переменной formData
+  const [tabIndex, setTabIndex] = useState(2); // Set trains as active tab
 
   return (
     <Box>
-      {/* Навигационные вкладки */}
+      {/* Navigation tabs */}
       <Box bg="#0e2654" py={0}>
         <Flex 
           maxW="1200px" 
@@ -96,7 +93,7 @@ export default function Home() {
         </Flex>
       </Box>
 
-      {/* Основной контент */}
+      {/* Main content */}
       <Box bg="gray.100" py={8}>
         <Flex 
           maxW="1200px" 
@@ -105,7 +102,7 @@ export default function Home() {
           direction={{ base: "column", lg: "row" }}
           gap={6}
         >
-          {/* Форма поиска */}
+          {/* Search form */}
           <Box 
             w={{ base: "100%", lg: "50%" }}
             bg="white"
@@ -119,7 +116,7 @@ export default function Home() {
             <SearchForm />
           </Box>
 
-          {/* Баннер */}
+          {/* Banner */}
           <Box 
             w={{ base: "100%", lg: "50%" }}
             bg="#2d4a8a"
@@ -165,7 +162,7 @@ export default function Home() {
         </Flex>
       </Box>
 
-      {/* Секция "Почему выбирают нас" */}
+      {/* Section "Why choose us" */}
       <Box py={16}>
         <VStack spacing={8} maxW="1200px" mx="auto" px={4}>
           <Heading as="h2" size="xl" textAlign="center">
@@ -182,7 +179,7 @@ export default function Home() {
             mt={8}
             gap={6}
           >
-            {/* Преимущество 1 */}
+            {/* Advantage 1 */}
             <Box 
               w={{ base: "100%", md: "45%", lg: "22%" }}
               display="flex"
@@ -211,7 +208,7 @@ export default function Home() {
               </Box>
             </Box>
 
-            {/* Преимущество 2 */}
+            {/* Advantage 2 */}
             <Box 
               w={{ base: "100%", md: "45%", lg: "22%" }}
               display="flex"
@@ -240,7 +237,7 @@ export default function Home() {
               </Box>
             </Box>
 
-            {/* Преимущество 3 */}
+            {/* Advantage 3 */}
             <Box 
               w={{ base: "100%", md: "45%", lg: "22%" }}
               display="flex"
@@ -269,7 +266,7 @@ export default function Home() {
               </Box>
             </Box>
 
-            {/* Преимущество 4 */}
+            {/* Advantage 4 */}
             <Box 
               w={{ base: "100%", md: "45%", lg: "22%" }}
               display="flex"

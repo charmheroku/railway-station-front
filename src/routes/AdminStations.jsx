@@ -40,7 +40,7 @@ import { useUser } from "../lib/useUser";
 import { FaEdit, FaTrash, FaArrowLeft } from "react-icons/fa";
 import axios from "axios";
 
-// Базовый URL API
+// Base API URL
 const API_URL = process.env.NODE_ENV === "development"
   ? "http://127.0.0.1:8000/api/"
   : "https://api.railway-station.com/api/";
@@ -53,7 +53,7 @@ export default function AdminStations() {
   const [isLoadingStations, setIsLoadingStations] = useState(false);
   const [error, setError] = useState(null);
   
-  // Состояние для модального окна создания/редактирования станции
+  // State for modal window for creating/editing station
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isEditing, setIsEditing] = useState(false);
   const [currentStation, setCurrentStation] = useState({
@@ -63,12 +63,12 @@ export default function AdminStations() {
     address: "",
   });
   
-  // Состояние для диалога удаления
+  // State for delete dialog
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [stationToDelete, setStationToDelete] = useState(null);
   const cancelRef = useRef();
   
-  // Проверяем, является ли пользователь администратором
+  // Check if user is an administrator
   useEffect(() => {
     if (!isLoading && !isLoggedIn) {
       toast({
@@ -94,7 +94,7 @@ export default function AdminStations() {
     }
   }, [isLoading, isLoggedIn, user, navigate, toast]);
   
-  // Загружаем список станций
+  // Load list of stations
   const fetchStations = async () => {
     setIsLoadingStations(true);
     setError(null);
@@ -122,14 +122,14 @@ export default function AdminStations() {
     }
   };
   
-  // Загружаем станции при монтировании компонента
+  // Load stations when component is mounted
   useEffect(() => {
     if (isLoggedIn && (user?.is_staff || user?.is_superuser)) {
       fetchStations();
     }
   }, [isLoggedIn, user]);
   
-  // Обработчик открытия модального окна для создания станции
+  // Handler for opening modal window for creating station
   const handleAddStation = () => {
     setIsEditing(false);
     setCurrentStation({
@@ -141,7 +141,7 @@ export default function AdminStations() {
     onOpen();
   };
   
-  // Обработчик открытия модального окна для редактирования станции
+  // Handler for opening modal window for editing station
   const handleEditStation = (station) => {
     setIsEditing(true);
     setCurrentStation({
@@ -153,7 +153,7 @@ export default function AdminStations() {
     onOpen();
   };
   
-  // Обработчик изменения полей формы
+  // Handler for changing form fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setCurrentStation({
@@ -162,13 +162,13 @@ export default function AdminStations() {
     });
   };
   
-  // Обработчик сохранения станции
+  // Handler for saving station
   const handleSaveStation = async () => {
     try {
       const token = localStorage.getItem("token");
       
       if (isEditing) {
-        // Обновляем существующую станцию
+        // Update existing station
         await axios.put(
           `${API_URL}station/stations/${currentStation.id}/`,
           currentStation,
@@ -187,7 +187,7 @@ export default function AdminStations() {
           isClosable: true,
         });
       } else {
-        // Создаем новую станцию
+        // Create new station
         await axios.post(
           `${API_URL}station/stations/`,
           currentStation,
@@ -207,7 +207,7 @@ export default function AdminStations() {
         });
       }
       
-      // Закрываем модальное окно и обновляем список станций
+      // Close modal window and update list of stations
       onClose();
       fetchStations();
     } catch (error) {
@@ -222,13 +222,13 @@ export default function AdminStations() {
     }
   };
   
-  // Обработчик открытия диалога удаления
+  // Handler for opening delete dialog
   const handleDeleteClick = (station) => {
     setStationToDelete(station);
     setIsDeleteDialogOpen(true);
   };
   
-  // Обработчик удаления станции
+  // Handler for deleting station
   const handleDeleteStation = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -250,7 +250,7 @@ export default function AdminStations() {
         isClosable: true,
       });
       
-      // Закрываем диалог и обновляем список станций
+      // Close dialog and update list of stations
       setIsDeleteDialogOpen(false);
       fetchStations();
     } catch (error) {
@@ -355,7 +355,7 @@ export default function AdminStations() {
         )}
       </VStack>
       
-      {/* Модальное окно для создания/редактирования станции */}
+      {/* Modal window for creating/editing station */}
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
@@ -409,7 +409,7 @@ export default function AdminStations() {
         </ModalContent>
       </Modal>
       
-      {/* Диалог подтверждения удаления */}
+      {/* Delete confirmation dialog */}
       <AlertDialog
         isOpen={isDeleteDialogOpen}
         leastDestructiveRef={cancelRef}

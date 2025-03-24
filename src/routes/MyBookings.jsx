@@ -29,18 +29,18 @@ export default function MyBookings() {
   const toast = useToast();
   const { isLoggedIn, userLoading: isUserLoading } = useUser();
   
-  // Определяем цвета на верхнем уровне компонента
+  // Define colors at the top level of the component
   const borderColor = useColorModeValue("gray.200", "gray.600");
   const bgColor = useColorModeValue("white", "gray.700");
   
-  // Получаем список заказов пользователя
+  // Get user orders list
   const { data: orders, isLoading, error } = useQuery(
     ["userOrders"],
     () => {
-      // В реальном приложении используем API
+      // In a real application, we use the API
       return getMyOrders();
       
-      // Для разработки используем моковые данные
+      // For development, we use mock data
       //return getMockUserOrders();
     },
     {
@@ -59,7 +59,7 @@ export default function MyBookings() {
     }
   );
   
-  // Проверяем, авторизован ли пользователь
+  // Check if user is authorized
   useEffect(() => {
     if (!isUserLoading && !isLoggedIn) {
       toast({
@@ -73,7 +73,7 @@ export default function MyBookings() {
     }
   }, [isUserLoading, isLoggedIn, navigate, toast]);
   
-  // Получаем цвет статуса заказа
+  // Get order status color
   const getStatusColor = (status) => {
     switch (status) {
       case "confirmed":
@@ -142,7 +142,7 @@ export default function MyBookings() {
         ) : (
           <VStack spacing={4} align="stretch">
             {orders.map((order) => {
-              // Получаем данные о поездке, если они доступны
+              // Get trip data if it is available
               const hasTickets = order.tickets && order.tickets.length > 0;
               const trip = hasTickets ? order.tickets[0].trip : null;
               

@@ -40,120 +40,80 @@ export default function TrainAvailabilityModal({ isOpen, onClose, train }) {
   const bgColor = useColorModeValue("white", "gray.700");
   const highlightBg = useColorModeValue("blue.50", "blue.900");
   
-  // Получаем данные из новой структуры
-  const trainName = train.train_name || "";
-  const trainNumber = train.train_number || "";
-  const origin = train.origin_station || "";
-  const destination = train.destination_station || "";
-  const basePrice = parseFloat(train.base_price) || 0;
-  const durationMinutes = train.duration_minutes || 0;
+  // Базовая информация о поезде
+  const trainName = train?.train_name || "";
+  const trainNumber = train?.train_number || "";
+  const origin = train?.origin_station || "";
+  const destination = train?.destination_station || "";
+  const basePrice = parseFloat(train?.base_price) || 0;
+  const durationMinutes = train?.duration_minutes || 0;
   const durationText = formatDuration(durationMinutes);
   
-  // Получаем текущую дату в формате YYYY-MM-DD
+  // Получаем текущую дату
   const today = new Date().toISOString().split('T')[0];
   
-  // Получаем информацию о доступности поезда
-  const { data: tripData, isLoading, refetch } = useQuery(
-    ["tripAvailability", train.id, today, passengersCount],
-    () => {
-      // Передаем параметры даты и количества пассажиров
-      return getTripAvailability(train.id, today, passengersCount);
-    },
+  // Запрос данных о доступности
+  const { data: availability, isLoading } = useQuery(
+    ["tripAvailability", train?.id, today, passengersCount],
+    () => getTripAvailability(train?.id, today, passengersCount),
     {
-      enabled: isOpen, // Запрос выполняется только когда модальное окно открыто
-      staleTime: 60000, // Кэшируем данные на 1 минуту
-      initialData: train // Используем данные из пропса как начальные
+      enabled: isOpen && !!train?.id,
+      staleTime: 60000,
     }
   );
-  
-  // Обновляем данные при изменении количества пассажиров
+
+  // Получаем информацию о выбранной дате
+  const selectedDateInfo = availability?.dates_availability?.[selectedDateIndex];
+
+  // Устанавливаем класс по умолчанию при загрузке данных
   useEffect(() => {
-    if (isOpen) {
-      refetch();
+    if (availability?.wagon_types?.length > 0 && !selectedClass) {
+      setSelectedClass(availability.wagon_types[0].name);
     }
-  }, [passengersCount, isOpen, refetch]);
-  
-  // Устанавливаем первый доступный класс как выбранный по умолчанию
-  useEffect(() => {
-    if (tripData && tripData.wagon_types && tripData.wagon_types.length > 0 && !selectedClass) {
-      setSelectedClass(tripData.wagon_types[0].name);
-    }
-  }, [tripData, selectedClass]);
-  
-  // Получаем выбранную дату
-  const getSelectedDateInfo = () => {
-    if (!tripData || !tripData.dates_availability || tripData.dates_availability.length === 0) {
-      return null;
-    }
-    
-    return tripData.dates_availability[selectedDateIndex];
+  }, [availability, selectedClass]);
+
+  // Функции для работы с данными вагонов
+  const getWagonsByType = (className) => {
+    return selectedDateInfo?.wagons?.filter(w => w.wagon_type === className) || [];
   };
-  
-  // Получаем цену для выбранного класса
-  const getClassPrice = () => {
-    const dateInfo = getSelectedDateInfo();
-    if (!dateInfo || !selectedClass || !dateInfo.classes[selectedClass]) {
-      return basePrice;
-    }
+
+  const getClassInfo = (className) => {
+    const wagons = getWagonsByType(className);
+    const summary = selectedDateInfo?.wagon_types_summary?.[className];
     
-    return dateInfo.classes[selectedClass].price_for_passengers;
-  };
-  
-  // Проверяем доступность выбранного класса на выбранную дату
-  const isClassAvailable = (className) => {
-    const dateInfo = getSelectedDateInfo();
-    if (!dateInfo || !dateInfo.is_available || !dateInfo.classes[className]) {
-      return false;
-    }
+    if (!summary || !wagons.length) return null;
     
-    return dateInfo.classes[className].available_seats > 0 && 
-           dateInfo.classes[className].has_enough_seats;
+    return {
+      isAvailable: summary.has_enough_seats,
+      availableSeats: summary.available_seats,
+      totalSeats: summary.total_seats,
+      price: wagons[0].price_per_passenger,
+      totalPrice: wagons[0].total_price
+    };
   };
-  
-  // Получаем количество доступных мест для выбранного класса
-  const getAvailableSeats = (className) => {
-    const dateInfo = getSelectedDateInfo();
-    if (!dateInfo || !dateInfo.classes[className]) {
-      return 0;
-    }
-    
-    return dateInfo.classes[className].available_seats;
-  };
-  
+
   const handleBookNow = () => {
-    const dateInfo = getSelectedDateInfo();
-    if (!dateInfo || !selectedClass) return;
+    if (!selectedDateInfo || !selectedClass) return;
     
-    // Получаем информацию о выбранной дате и рейсе
-    const selectedTripInfo = dateInfo.trip_info || train;
-    
-    // Извлекаем дату из времени отправления выбранной даты
-    const departureDate = new Date(dateInfo.departure_time);
-    const departureDateStr = departureDate.toISOString().split('T')[0];
-    
-    // Убедимся, что отправляем на страницу бронирования именно ту дату, 
-    // которая соответствует выбранному блоку с датой
     onClose();
-    navigate(`/trips/${selectedTripInfo.id}/seats`, {
+    navigate(`/trips/${train.id}/seats`, {
       state: {
         selectedClass,
-        // Используем дату отправления из выбранной даты
-        selectedDate: departureDateStr,
-        actualDepartureTime: dateInfo.departure_time,  // Передаем полное время отправления
+        selectedDate: selectedDateInfo.departure_date,
+        actualDepartureTime: selectedDateInfo.departure_time,
         price: basePrice,
         passengersCount,
-        // Добавляем полную информацию о выбранном рейсе с правильными датами
         tripInfo: {
-          ...selectedTripInfo,
-          departure_time: dateInfo.departure_time,
-          arrival_time: dateInfo.arrival_time
+          ...train,
+          departure_time: selectedDateInfo.departure_time,
+          arrival_time: selectedDateInfo.arrival_time
         }
       }
     });
   };
-  
+
   if (!train) return null;
-  
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="xl">
       <ModalOverlay />
@@ -248,7 +208,6 @@ export default function TrainAvailabilityModal({ isOpen, onClose, train }) {
                   max={10} 
                   value={passengersCount} 
                   onChange={(valueString) => setPassengersCount(parseInt(valueString))}
-                  size="md"
                 >
                   <NumberInputField />
                   <NumberInputStepper>
@@ -264,7 +223,7 @@ export default function TrainAvailabilityModal({ isOpen, onClose, train }) {
               <Box>
                 <Text fontWeight="medium" mb={3}>Select Date</Text>
                 <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={3}>
-                  {tripData && tripData.dates_availability && tripData.dates_availability.map((dateInfo, index) => {
+                  {availability?.dates_availability?.map((dateInfo, index) => {
                     const departureDate = new Date(dateInfo.departure_time);
                     const formattedDate = formatDate(departureDate);
                     const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][departureDate.getDay()];
@@ -280,22 +239,16 @@ export default function TrainAvailabilityModal({ isOpen, onClose, train }) {
                         cursor={dateInfo.is_available ? "pointer" : "not-allowed"}
                         opacity={dateInfo.is_available ? 1 : 0.6}
                         onClick={() => dateInfo.is_available && setSelectedDateIndex(index)}
-                        textAlign="center"
                       >
                         <Text fontWeight={selectedDateIndex === index ? "bold" : "normal"}>
                           {formattedDate}, {dayOfWeek}
                         </Text>
-                        <HStack justify="center" mt={1}>
-                          <Badge 
-                            colorScheme={dateInfo.is_available ? "green" : "red"}
-                            fontSize="xs"
-                            px={2}
-                            py={0.5}
-                            borderRadius="full"
-                          >
-                            {dateInfo.is_available ? "Available" : "Unavailable"}
-                          </Badge>
-                        </HStack>
+                        <Badge 
+                          colorScheme={dateInfo.is_available ? "green" : "red"}
+                          fontSize="xs"
+                        >
+                          {dateInfo.is_available ? "Available" : "Unavailable"}
+                        </Badge>
                       </Box>
                     );
                   })}
@@ -309,40 +262,37 @@ export default function TrainAvailabilityModal({ isOpen, onClose, train }) {
                 <Text fontWeight="medium" mb={3}>Select Class</Text>
                 <RadioGroup onChange={setSelectedClass} value={selectedClass}>
                   <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={3}>
-                    {tripData && tripData.wagon_types && tripData.wagon_types.map((wagonType) => {
+                    {availability?.wagon_types?.map((wagonType) => {
                       const className = wagonType.name;
-                      const fareMultiplier = wagonType.fare_multiplier;
-                      const isAvailable = isClassAvailable(className);
-                      const availableSeats = getAvailableSeats(className);
-                      const dateInfo = getSelectedDateInfo();
-                      const price = dateInfo && dateInfo.classes[className] ? 
-                        dateInfo.classes[className].price_for_passengers : 
-                        (basePrice * parseFloat(wagonType.fare_multiplier));
+                      const classInfo = getClassInfo(className);
                       
+                      if (!classInfo) return null;
+
                       return (
                         <Box 
                           key={className}
-                          p={3}
+                          p={4}
                           borderWidth="1px"
-                          borderRadius="md"
-                          borderColor={selectedClass === className ? "blue.500" : borderColor}
-                          bg={selectedClass === className ? highlightBg : bgColor}
-                          cursor={isAvailable ? "pointer" : "not-allowed"}
-                          opacity={isAvailable ? 1 : 0.6}
-                          onClick={() => isAvailable && setSelectedClass(className)}
+                          borderRadius="lg"
+                          borderColor={selectedClass === className ? "blue.500" : "gray.200"}
+                          bg={selectedClass === className ? "blue.50" : "white"}
+                          cursor={classInfo.isAvailable ? "pointer" : "not-allowed"}
+                          opacity={classInfo.isAvailable ? 1 : 0.6}
+                          onClick={() => classInfo.isAvailable && setSelectedClass(className)}
+                          _hover={classInfo.isAvailable ? { borderColor: "blue.400", shadow: "md" } : {}}
                         >
                           <Flex justify="space-between" align="center">
-                            <VStack align="start" spacing={0}>
+                            <VStack align="start" spacing={1}>
                               <Text fontWeight="bold">{className}</Text>
                               <Text fontSize="sm" color="gray.600">
-                                {isAvailable ? `${availableSeats} seats available` : "No seats available"}
+                                {classInfo.availableSeats} of {classInfo.totalSeats} seats available
                               </Text>
-                              <Text fontSize="xs" color="gray.500">
-                                Fare multiplier: x{fareMultiplier}
-                              </Text>
+                              <Badge colorScheme={classInfo.isAvailable ? "green" : "red"}>
+                                {classInfo.isAvailable ? "Available" : "Not Available"}
+                              </Badge>
                             </VStack>
-                            <Text fontWeight="bold" color="blue.500">
-                              ${price}
+                            <Text fontWeight="bold" fontSize="xl" color="blue.600">
+                              ${classInfo.price}
                             </Text>
                           </Flex>
                         </Box>
@@ -359,10 +309,9 @@ export default function TrainAvailabilityModal({ isOpen, onClose, train }) {
                 <Flex justifyContent="space-between" alignItems="center">
                   <Text fontWeight="medium">Total Fare:</Text>
                   <Text fontWeight="bold" fontSize="xl">
-                    ${getClassPrice()}
+                    ${getClassInfo(selectedClass)?.totalPrice || basePrice}
                   </Text>
                 </Flex>
-                
               </Box>
             </VStack>
           )}
@@ -375,7 +324,7 @@ export default function TrainAvailabilityModal({ isOpen, onClose, train }) {
           <Button 
             colorScheme="blue" 
             onClick={handleBookNow}
-            isDisabled={!selectedClass || !getSelectedDateInfo()?.is_available}
+            isDisabled={!selectedClass || !selectedDateInfo?.is_available}
           >
             Book Now
           </Button>

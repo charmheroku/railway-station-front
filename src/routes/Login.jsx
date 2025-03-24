@@ -25,10 +25,10 @@ export default function Login() {
   const location = useLocation();
   const toast = useToast();
   
-  // Получаем URL для перенаправления после входа
+  // Get URL for redirect after login
   const from = location.state?.from || "/";
   
-  // Мутация для входа
+  // Mutation for login
   const loginMutation = useMutation(
     () => login(email, password),
     {

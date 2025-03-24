@@ -56,7 +56,7 @@ export default function TripDetail() {
     );
   }
   
-  // Получаем данные из новой структуры
+  // Get data from new structure
   const getTrainInfo = () => {
     if (!trip) return { name: "", number: "", origin: "", destination: "" };
     
@@ -201,9 +201,9 @@ export default function TripDetail() {
                 size="lg"
                 onClick={() => {
                   if (isLoggedIn) {
-                    onOpen(); // Открываем модальное окно доступности
+                    onOpen(); // Open availability modal
                   } else {
-                    // Перенаправляем на страницу входа
+                    // Redirect to login page
                     navigate("/login", { state: { from: `/trips/${tripId}` } });
                   }
                 }}
@@ -307,7 +307,7 @@ export default function TripDetail() {
         </Tabs>
       </VStack>
       
-      {/* Модальное окно доступности */}
+      {/* Availability modal */}
       <TrainAvailabilityModal 
         isOpen={isOpen} 
         onClose={onClose} 

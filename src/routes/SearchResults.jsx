@@ -77,15 +77,15 @@ export default function SearchResults() {
       const isInArrivalRange = arrivalHour >= filters.arrivalTimeRange[0] && 
                               arrivalHour <= filters.arrivalTimeRange[1];
       
-      // Проверяем доступность выбранных классов
+      // Check if selected classes are available
       let hasSelectedClass = true;
       if (filters.selectedClasses.length > 0) {
-        // Проверяем наличие выбранных типов вагонов в поезде
+        // Check if selected wagon types are available in the trip
         hasSelectedClass = trip.wagon_types && trip.wagon_types.some(wagonType => 
           filters.selectedClasses.includes(wagonType.name)
         );
         
-        // Если wagon_types отсутствует, проверяем available_seats_by_class (для обратной совместимости)
+        // If wagon_types is missing, check available_seats_by_class (for backward compatibility)
         if (!hasSelectedClass && trip.available_seats_by_class) {
           hasSelectedClass = filters.selectedClasses.some(classType => 
             trip.available_seats_by_class[classType] > 0
@@ -97,10 +97,10 @@ export default function SearchResults() {
     });
     
     setFilteredTrips(filtered);
-    setCurrentPage(1); // Сбрасываем на первую страницу при изменении фильтров
+    setCurrentPage(1); // Reset to first page when filters change
   };
   
-  // Пагинация
+  // Pagination
   const indexOfLastTrip = currentPage * tripsPerPage;
   const indexOfFirstTrip = indexOfLastTrip - tripsPerPage;
   const currentTrips = filteredTrips.slice(indexOfFirstTrip, indexOfLastTrip);
@@ -198,12 +198,12 @@ export default function SearchResults() {
       {/* Main Content */}
       <Container maxW="container.xl" py={8}>
         <Grid templateColumns={{ base: "1fr", md: "250px 1fr" }} gap={6}>
-          {/* Фильтр */}
+          {/* Filter */}
           <Box>
             <SearchFilter onFilterChange={handleFilterChange} />
           </Box>
           
-          {/* Результаты поиска */}
+          {/* Search results */}
           <VStack spacing={4} align="stretch">
             <Heading size="lg">
               {originName} to {destinationName}
@@ -253,7 +253,7 @@ export default function SearchResults() {
                   <TrainCard key={trip.id} train={trip} />
                 ))}
                 
-                {/* Пагинация */}
+                {/* Pagination */}
                 {totalPages > 1 && (
                   <Flex justify="center" mt={6}>
                     <HStack>

@@ -27,7 +27,7 @@ export default function Register() {
   const navigate = useNavigate();
   const toast = useToast();
   
-  // Мутация для регистрации
+  // Mutation for registration
   const registerMutation = useMutation(
     () => register(email, password, firstName, lastName),
     {
@@ -56,7 +56,7 @@ export default function Register() {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Проверка заполнения полей
+    // Check if all fields are filled
     if (!email || !password || !confirmPassword || !firstName || !lastName) {
       toast({
         title: "Error",
@@ -68,7 +68,7 @@ export default function Register() {
       return;
     }
     
-    // Проверка совпадения паролей
+    // Check if passwords match
     if (password !== confirmPassword) {
       toast({
         title: "Error",
@@ -80,7 +80,7 @@ export default function Register() {
       return;
     }
     
-    // Проверка длины пароля
+    // Check password length
     if (password.length < 8) {
       toast({
         title: "Error",

@@ -25,7 +25,7 @@ export default function AdminDashboard() {
   const borderColor = useColorModeValue("gray.200", "gray.600");
   const hoverBg = useColorModeValue("blue.50", "blue.900");
   
-  // Проверяем, является ли пользователь администратором
+  //Check if user is an administrator
   useEffect(() => {
     if (!isLoading && !isLoggedIn) {
       toast({
@@ -51,7 +51,7 @@ export default function AdminDashboard() {
     }
   }, [isLoading, isLoggedIn, user, navigate, toast]);
   
-  // Массив с элементами админ-панели
+  //Array with admin panel elements
   const adminItems = [
     {
       title: "Stations",

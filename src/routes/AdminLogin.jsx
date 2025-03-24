@@ -34,7 +34,7 @@ export default function AdminLogin() {
     try {
       const userData = await login(email, password);
       
-      // Проверяем, является ли пользователь администратором
+      //Check if user is an administrator
       await refetch();
       const user = JSON.parse(localStorage.getItem("user"));
       
@@ -48,7 +48,6 @@ export default function AdminLogin() {
         });
         navigate("/admin/dashboard");
       } else {
-        // Если пользователь не админ, выходим и показываем ошибку
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         setError("You don't have permission to access the admin panel");

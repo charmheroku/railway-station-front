@@ -60,7 +60,7 @@ export default function AdminPassengerTypes() {
   const [isLoadingPassengerTypes, setIsLoadingPassengerTypes] = useState(false);
   const [error, setError] = useState(null);
   
-  // Состояние для модального окна создания/редактирования типа пассажира
+  // State for modal window for creating/editing passenger type
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isEditing, setIsEditing] = useState(false);
   const [currentPassengerType, setCurrentPassengerType] = useState({
@@ -71,12 +71,12 @@ export default function AdminPassengerTypes() {
     is_active: true,
   });
   
-  // Состояние для диалога удаления
+  // State for delete dialog
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [passengerTypeToDelete, setPassengerTypeToDelete] = useState(null);
   const cancelRef = useRef();
   
-  // Проверяем, является ли пользователь администратором
+  // Check if user is an administrator
   useEffect(() => {
     if (!isLoading && !isLoggedIn) {
       toast({
@@ -102,7 +102,7 @@ export default function AdminPassengerTypes() {
     }
   }, [isLoading, isLoggedIn, user, navigate, toast]);
   
-  // Загружаем список типов пассажиров
+  // Load list of passenger types
   const fetchPassengerTypes = useCallback(async () => {
     setIsLoadingPassengerTypes(true);
     setError(null);
@@ -130,14 +130,12 @@ export default function AdminPassengerTypes() {
     }
   }, [toast]);
   
-  // Загружаем типы пассажиров при монтировании компонента
   useEffect(() => {
     if (isLoggedIn && (user?.is_staff || user?.is_superuser)) {
       fetchPassengerTypes();
     }
   }, [isLoggedIn, user, fetchPassengerTypes]);
   
-  // Обработчик открытия модального окна для создания типа пассажира
   const handleAddPassengerType = () => {
     setIsEditing(false);
     setCurrentPassengerType({
@@ -150,7 +148,6 @@ export default function AdminPassengerTypes() {
     onOpen();
   };
   
-  // Обработчик открытия модального окна для редактирования типа пассажира
   const handleEditPassengerType = (passengerType) => {
     setIsEditing(true);
     setCurrentPassengerType({
@@ -163,7 +160,6 @@ export default function AdminPassengerTypes() {
     onOpen();
   };
   
-  // Обработчик изменения полей формы
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setCurrentPassengerType({
@@ -172,7 +168,6 @@ export default function AdminPassengerTypes() {
     });
   };
   
-  // Обработчик изменения числового поля скидки
   const handleDiscountChange = (value) => {
     setCurrentPassengerType({
       ...currentPassengerType,
@@ -180,13 +175,12 @@ export default function AdminPassengerTypes() {
     });
   };
   
-  // Обработчик сохранения типа пассажира
   const handleSavePassengerType = async () => {
     try {
       const token = localStorage.getItem("token");
       
       if (isEditing) {
-        // Обновляем существующий тип пассажира
+        // Update existing passenger type
         await axios.put(
           `${API_URL}booking/passenger-types/${currentPassengerType.id}/`,
           currentPassengerType,
@@ -205,7 +199,7 @@ export default function AdminPassengerTypes() {
           isClosable: true,
         });
       } else {
-        // Создаем новый тип пассажира
+        // Create new passenger type
         await axios.post(
           `${API_URL}booking/passenger-types/`,
           currentPassengerType,
@@ -225,7 +219,6 @@ export default function AdminPassengerTypes() {
         });
       }
       
-      // Закрываем модальное окно и обновляем список типов пассажиров
       onClose();
       fetchPassengerTypes();
     } catch (error) {
@@ -240,13 +233,13 @@ export default function AdminPassengerTypes() {
     }
   };
   
-  // Обработчик открытия диалога удаления
+  // Handler for opening delete dialog
   const handleDeleteClick = (passengerType) => {
     setPassengerTypeToDelete(passengerType);
     setIsDeleteDialogOpen(true);
   };
   
-  // Обработчик удаления типа пассажира
+  // Handler for deleting passenger type
   const handleDeletePassengerType = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -268,7 +261,7 @@ export default function AdminPassengerTypes() {
         isClosable: true,
       });
       
-      // Закрываем диалог и обновляем список типов пассажиров
+      // Close dialog and update list of passenger types
       setIsDeleteDialogOpen(false);
       fetchPassengerTypes();
     } catch (error) {
@@ -375,7 +368,7 @@ export default function AdminPassengerTypes() {
         )}
       </VStack>
       
-      {/* Модальное окно для создания/редактирования типа пассажира */}
+      {/* Modal window for creating/editing passenger type */}
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
@@ -455,7 +448,6 @@ export default function AdminPassengerTypes() {
         </ModalContent>
       </Modal>
       
-      {/* Диалог подтверждения удаления */}
       <AlertDialog
         isOpen={isDeleteDialogOpen}
         leastDestructiveRef={cancelRef}

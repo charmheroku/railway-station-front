@@ -6,7 +6,6 @@ export default function ProtectedPage({ children }) {
   const { isLoggedIn, isLoading } = useUser();
   const location = useLocation();
   
-  // Если данные пользователя загружаются, показываем спиннер
   if (isLoading) {
     return (
       <Box
@@ -23,11 +22,9 @@ export default function ProtectedPage({ children }) {
     );
   }
   
-  // Если пользователь не авторизован, перенаправляем на страницу входа
   if (!isLoggedIn) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
   
-  // Если пользователь авторизован, показываем защищенный контент
   return children;
 } 

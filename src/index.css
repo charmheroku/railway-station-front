@@ -1,7 +1,7 @@
-/* Импорт шрифта Poppins из Google Fonts */
+/* Import Poppins font from Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
-/* Базовые стили */
+/* Base styles */
 body {
   margin: 0;
   padding: 0;
@@ -12,7 +12,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Стили для календаря */
+/* Calendar styles */
 input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
   opacity: 0.6;
@@ -22,17 +22,17 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
 }
 
-/* Убираем стандартные стили для input type="date" */
+/* Remove default styles for input type="date" */
 input[type="date"] {
   position: relative;
 }
 
-/* Скрываем стандартный placeholder для input type="date" в Firefox */
+/* Hide default placeholder for input type="date" in Firefox */
 input[type="date"]::placeholder {
   opacity: 1;
 }
 
-/* Стили для выпадающих списков */
+/* Styles for dropdown lists */
 select {
   appearance: none;
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");

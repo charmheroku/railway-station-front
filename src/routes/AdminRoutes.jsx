@@ -45,7 +45,7 @@ import { useUser } from "../lib/useUser";
 import { FaEdit, FaTrash, FaArrowLeft } from "react-icons/fa";
 import axios from "axios";
 
-// Базовый URL API
+// Base API URL
 const API_URL = process.env.NODE_ENV === "development"
   ? "http://127.0.0.1:8000/api/"
   : "https://api.railway-station.com/api/";
@@ -60,7 +60,7 @@ export default function AdminRoutes() {
   const [isLoadingStations, setIsLoadingStations] = useState(false);
   const [error, setError] = useState(null);
   
-  // Состояние для модального окна создания/редактирования маршрута
+  // State for modal window for creating/editing route
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isEditing, setIsEditing] = useState(false);
   const [currentRoute, setCurrentRoute] = useState({
@@ -70,12 +70,12 @@ export default function AdminRoutes() {
     distance_km: 0,
   });
   
-  // Состояние для диалога удаления
+  // State for delete dialog
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [routeToDelete, setRouteToDelete] = useState(null);
   const cancelRef = useRef();
   
-  // Проверяем, является ли пользователь администратором
+  // Check if user is an administrator
   useEffect(() => {
     if (!isLoading && !isLoggedIn) {
       toast({
@@ -101,7 +101,7 @@ export default function AdminRoutes() {
     }
   }, [isLoading, isLoggedIn, user, navigate, toast]);
   
-  // Загружаем список маршрутов
+  // Load list of routes
   const fetchRoutes = useCallback(async () => {
     setIsLoadingRoutes(true);
     setError(null);
@@ -113,7 +113,6 @@ export default function AdminRoutes() {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log("Routes data:", response.data);
       setRoutes(response.data);
     } catch (error) {
       console.error("Error fetching routes:", error);
@@ -130,7 +129,7 @@ export default function AdminRoutes() {
     }
   }, [toast]);
   
-  // Загружаем список станций для выпадающих списков
+  // Load list of stations for dropdown lists
   const fetchStations = useCallback(async () => {
     setIsLoadingStations(true);
     
@@ -156,7 +155,7 @@ export default function AdminRoutes() {
     }
   }, [toast]);
   
-  // Загружаем маршруты и станции при монтировании компонента
+  // Load routes and stations when component is mounted
   useEffect(() => {
     if (isLoggedIn && (user?.is_staff || user?.is_superuser)) {
       fetchRoutes();
@@ -164,7 +163,7 @@ export default function AdminRoutes() {
     }
   }, [isLoggedIn, user, fetchRoutes, fetchStations]);
   
-  // Обработчик открытия модального окна для создания маршрута
+  // Handler for opening modal window for creating route
   const handleAddRoute = () => {
     setIsEditing(false);
     setCurrentRoute({
@@ -176,11 +175,11 @@ export default function AdminRoutes() {
     onOpen();
   };
   
-  // Обработчик открытия модального окна для редактирования маршрута
+  // Handler for opening modal window for editing route
   const handleEditRoute = (route) => {
     setIsEditing(true);
     
-    // Находим ID станций по их названиям, если они представлены в виде строк
+    // Find station IDs by their names, if they are represented as strings
     let originId = route.origin?.id || route.origin_station?.id || "";
     let destinationId = route.destination?.id || route.destination_station?.id || "";
     
@@ -207,7 +206,7 @@ export default function AdminRoutes() {
     onOpen();
   };
   
-  // Обработчик изменения полей формы
+  // Handler for changing form fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setCurrentRoute({
@@ -216,7 +215,7 @@ export default function AdminRoutes() {
     });
   };
   
-  // Обработчик изменения числового поля
+  // Handler for changing numeric field
   const handleNumberInputChange = (name, value) => {
     setCurrentRoute({
       ...currentRoute,
@@ -224,13 +223,13 @@ export default function AdminRoutes() {
     });
   };
   
-  // Обработчик сохранения маршрута
+  // Handler for saving route
   const handleSaveRoute = async () => {
     try {
       const token = localStorage.getItem("token");
       
       if (isEditing) {
-        // Обновляем существующий маршрут
+        // Update existing route
         await axios.put(
           `${API_URL}station/routes/${currentRoute.id}/`,
           currentRoute,
@@ -249,7 +248,7 @@ export default function AdminRoutes() {
           isClosable: true,
         });
       } else {
-        // Создаем новый маршрут
+        // Create new route
         await axios.post(
           `${API_URL}station/routes/`,
           currentRoute,
@@ -269,7 +268,7 @@ export default function AdminRoutes() {
         });
       }
       
-      // Закрываем модальное окно и обновляем список маршрутов
+      // Close modal window and update list of routes
       onClose();
       fetchRoutes();
     } catch (error) {
@@ -284,13 +283,13 @@ export default function AdminRoutes() {
     }
   };
   
-  // Обработчик открытия диалога удаления
+  // Handler for opening delete dialog
   const handleDeleteClick = (route) => {
     setRouteToDelete(route);
     setIsDeleteDialogOpen(true);
   };
   
-  // Обработчик удаления маршрута
+  // Handler for deleting route
   const handleDeleteRoute = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -312,7 +311,7 @@ export default function AdminRoutes() {
         isClosable: true,
       });
       
-      // Закрываем диалог и обновляем список маршрутов
+      // Close dialog and update list of routes
       setIsDeleteDialogOpen(false);
       fetchRoutes();
     } catch (error) {
@@ -417,7 +416,7 @@ export default function AdminRoutes() {
         )}
       </VStack>
       
-      {/* Модальное окно для создания/редактирования маршрута */}
+      {/* Modal window for creating/editing route */}
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
@@ -498,7 +497,7 @@ export default function AdminRoutes() {
         </ModalContent>
       </Modal>
       
-      {/* Диалог подтверждения удаления */}
+      {/* Delete confirmation dialog */}
       <AlertDialog
         isOpen={isDeleteDialogOpen}
         leastDestructiveRef={cancelRef}

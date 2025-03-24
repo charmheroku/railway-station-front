@@ -42,7 +42,7 @@ import { useUser } from "../lib/useUser";
 import { FaEdit, FaTrash, FaArrowLeft } from "react-icons/fa";
 import axios from "axios";
 
-// Базовый URL API
+// Base API URL
 const API_URL = process.env.NODE_ENV === "development"
   ? "http://127.0.0.1:8000/api/"
   : "https://api.railway-station.com/api/";
@@ -59,7 +59,7 @@ export default function AdminTrips() {
   const [isLoadingTrains, setIsLoadingTrains] = useState(false);
   const [error, setError] = useState(null);
   
-  // Состояние для модального окна создания/редактирования поездки
+  // State for modal window for creating/editing trip
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isEditing, setIsEditing] = useState(false);
   const [currentTrip, setCurrentTrip] = useState({
@@ -71,12 +71,12 @@ export default function AdminTrips() {
     base_price: "",
   });
   
-  // Состояние для диалога удаления
+  // State for delete dialog
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [tripToDelete, setTripToDelete] = useState(null);
   const cancelRef = useRef();
   
-  // Проверяем, является ли пользователь администратором
+  // Check if user is an administrator
   useEffect(() => {
     if (!isLoading && !isLoggedIn) {
       toast({
@@ -102,7 +102,7 @@ export default function AdminTrips() {
     }
   }, [isLoading, isLoggedIn, user, navigate, toast]);
   
-  // Загружаем список поездок
+  // Load list of trips
   const fetchTrips = useCallback(async () => {
     setIsLoadingTrips(true);
     setError(null);
@@ -114,7 +114,6 @@ export default function AdminTrips() {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log("Trips data:", response.data);
       setTrips(response.data);
     } catch (error) {
       console.error("Error fetching trips:", error);
@@ -131,7 +130,7 @@ export default function AdminTrips() {
     }
   }, [toast]);
   
-  // Загружаем список маршрутов
+  // Load list of routes
   const fetchRoutes = useCallback(async () => {
     setIsLoadingRoutes(true);
     
@@ -157,7 +156,7 @@ export default function AdminTrips() {
     }
   }, [toast]);
   
-  // Загружаем список поездов
+  // Load list of trains
   const fetchTrains = useCallback(async () => {
     setIsLoadingTrains(true);
     
@@ -183,7 +182,7 @@ export default function AdminTrips() {
     }
   }, [toast]);
   
-  // Загружаем данные при монтировании компонента
+  // Load data when component is mounted
   useEffect(() => {
     if (isLoggedIn && (user?.is_staff || user?.is_superuser)) {
       fetchTrips();
@@ -192,7 +191,7 @@ export default function AdminTrips() {
     }
   }, [isLoggedIn, user, fetchTrips, fetchRoutes, fetchTrains]);
   
-  // Обработчик открытия модального окна для создания поездки
+  // Handler for opening modal window for creating trip
   const handleAddTrip = () => {
     setIsEditing(false);
     setCurrentTrip({
@@ -206,28 +205,28 @@ export default function AdminTrips() {
     onOpen();
   };
   
-  // Обработчик открытия модального окна для редактирования поездки
+  // Handler for opening modal window for editing trip
   const handleEditTrip = (trip) => {
     setIsEditing(true);
     
-    // Форматируем дату и время для полей ввода
+    // Format date and time for input fields
     const formatDateTime = (dateTimeStr) => {
       if (!dateTimeStr) return "";
       const date = new Date(dateTimeStr);
       return date.toISOString().slice(0, 16); // Format: YYYY-MM-DDThh:mm
     };
     
-    // Находим ID маршрута и поезда по названиям станций и поезда
+    // Find ID of route and train by station names and train
     let routeId = "";
     let trainId = "";
     
-    // Если у нас есть объекты route и train
+    // If we have objects route and train
     if (trip.route && typeof trip.route === 'object') {
       routeId = trip.route.id;
     } 
-    // Если у нас есть строковые названия станций
+    // If we have string station names
     else if (trip.origin_station && trip.destination_station) {
-      // Ищем маршрут с такими же станциями
+      // Find route with same stations
       const matchingRoute = routes.find(r => 
         (r.origin_station === trip.origin_station || r.origin?.name === trip.origin_station) && 
         (r.destination_station === trip.destination_station || r.destination?.name === trip.destination_station)
@@ -237,13 +236,13 @@ export default function AdminTrips() {
       }
     }
     
-    // Если у нас есть объект train
+    // If we have object train
     if (trip.train && typeof trip.train === 'object') {
       trainId = trip.train.id;
     } 
-    // Если у нас есть строковые названия поезда и номер
+    // If we have string train name and number
     else if (trip.train_name && trip.train_number) {
-      // Ищем поезд с таким же названием и номером
+      // Find train with same name and number
       const matchingTrain = trains.find(t => 
         t.name === trip.train_name && t.number === trip.train_number
       );
@@ -263,7 +262,7 @@ export default function AdminTrips() {
     onOpen();
   };
   
-  // Обработчик изменения полей формы
+  // Handler for changing form fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setCurrentTrip({
@@ -272,13 +271,13 @@ export default function AdminTrips() {
     });
   };
   
-  // Обработчик сохранения поездки
+  // Handler for saving trip
   const handleSaveTrip = async () => {
     try {
       const token = localStorage.getItem("token");
       
       if (isEditing) {
-        // Обновляем существующую поездку
+        // Update existing trip
         await axios.put(
           `${API_URL}station/trips/${currentTrip.id}/`,
           currentTrip,
@@ -297,7 +296,7 @@ export default function AdminTrips() {
           isClosable: true,
         });
       } else {
-        // Создаем новую поездку
+        // Create new trip
         await axios.post(
           `${API_URL}station/trips/`,
           currentTrip,
@@ -317,7 +316,7 @@ export default function AdminTrips() {
         });
       }
       
-      // Закрываем модальное окно и обновляем список поездок
+      // Close modal window and update list of trips
       onClose();
       fetchTrips();
     } catch (error) {
@@ -332,13 +331,13 @@ export default function AdminTrips() {
     }
   };
   
-  // Обработчик открытия диалога удаления
+  // Handler for opening delete dialog
   const handleDeleteClick = (trip) => {
     setTripToDelete(trip);
     setIsDeleteDialogOpen(true);
   };
   
-  // Обработчик удаления поездки
+  // Handler for deleting trip
   const handleDeleteTrip = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -360,7 +359,7 @@ export default function AdminTrips() {
         isClosable: true,
       });
       
-      // Закрываем диалог и обновляем список поездок
+      // Close dialog and update list of trips
       setIsDeleteDialogOpen(false);
       fetchTrips();
     } catch (error) {
@@ -375,14 +374,14 @@ export default function AdminTrips() {
     }
   };
   
-  // Форматирование даты и времени для отображения
+  // Format date and time for display
   const formatDateTime = (dateTimeStr) => {
     if (!dateTimeStr) return "-";
     const date = new Date(dateTimeStr);
     return date.toLocaleString();
   };
   
-  // Вычисление продолжительности поездки
+  // Calculate duration of trip
   const calculateDuration = (departure, arrival) => {
     if (!departure || !arrival) return "-";
     
@@ -508,7 +507,7 @@ export default function AdminTrips() {
         )}
       </VStack>
       
-      {/* Модальное окно для создания/редактирования поездки */}
+      {/* Modal window for creating/editing trip */}
       <Modal isOpen={isOpen} onClose={onClose} size="lg">
         <ModalOverlay />
         <ModalContent>
@@ -615,7 +614,7 @@ export default function AdminTrips() {
         </ModalContent>
       </Modal>
       
-      {/* Диалог подтверждения удаления */}
+      {/* Delete confirmation dialog */}
       <AlertDialog
         isOpen={isDeleteDialogOpen}
         leastDestructiveRef={cancelRef}

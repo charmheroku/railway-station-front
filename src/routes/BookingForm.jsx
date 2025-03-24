@@ -34,34 +34,34 @@ export default function BookingForm() {
   const queryClient = useQueryClient();
   const { isLoggedIn, userLoading: isUserLoading } = useUser();
   
-  // Определяем цвета заранее, до всех условных операторов
+  // Define colors beforehand, before all conditional operators
   const borderColor = useColorModeValue("gray.200", "gray.600");
   const bgColor = useColorModeValue("white", "gray.700");
   
-  // Получаем данные из location state (если есть)
+  // Get data from location state (if available)
   const selectedClass = location.state?.selectedClass || "";
   const selectedDate = location.state?.selectedDate || new Date().toISOString().split("T")[0];
   const selectedPrice = location.state?.price || 0;
   const passengersCount = location.state?.passengersCount || 1;
   const tripInfo = location.state?.tripInfo;
   
-  // Состояние для пассажиров
+  // State for passengers
   const [passengers, setPassengers] = useState(Array(passengersCount).fill().map(() => ({
     firstName: "", lastName: "", document: "", type: "adult"
   })));
   
-  // Получаем информацию о поездке только если она не передана в location state
+  // Get trip information only if it is not passed in location state
   const { data: trip, isLoading: isTripLoading } = useQuery(
     ["trip", tripId],
     () => getTrip({ queryKey: ["trip", tripId] }),
     {
       enabled: !!tripId && !tripInfo,
       staleTime: 60000,
-      initialData: tripInfo // Используем переданные данные как начальные
+      initialData: tripInfo // Use passed data as initial data
     }
   );
   
-  // Получаем информацию о доступности
+  // Get information about availability
   const { data: availability, isLoading: isAvailabilityLoading } = useQuery(
     ["tripAvailability", tripId, selectedDate, passengersCount],
     () => getTripAvailability(tripId, selectedDate, passengersCount),
@@ -75,10 +75,10 @@ export default function BookingForm() {
   const { data: passengerTypes, isLoading: isPassengerTypesLoading } = useQuery(
     ["passengerTypes"],
     () => {
-      // В реальном приложении используем API
+      // In real application, use API
       return getPassengerTypes();
       
-      // Для разработки используем моковые данные
+      // For development, use mock data
       //return getMockPassengerTypes();
     },
     {
@@ -113,7 +113,7 @@ export default function BookingForm() {
     }
   );
   
-  // Проверяем, авторизован ли пользователь
+  // Check if user is authorized
   useEffect(() => {
     if (!isUserLoading && !isLoggedIn) {
       toast({
@@ -127,7 +127,7 @@ export default function BookingForm() {
     }
   }, [isUserLoading, isLoggedIn, navigate, tripId, toast]);
   
-  // Находим информацию о выбранной дате
+  // Find information about selected date
   const getSelectedDateInfo = () => {
     if (!availability || !availability.dates_availability) return null;
     
@@ -137,7 +137,7 @@ export default function BookingForm() {
     });
   };
   
-  // Получаем цену для выбранного класса
+  // Get price for selected class
   const getClassPrice = () => {
     if (selectedPrice > 0) return selectedPrice;
     
@@ -149,7 +149,7 @@ export default function BookingForm() {
     return dateInfo.classes[selectedClass].price_for_passengers;
   };
   
-  // Проверяем доступность выбранного класса
+  // Check if selected class is available
   const isClassAvailable = () => {
     const dateInfo = getSelectedDateInfo();
     if (!dateInfo || !selectedClass || !dateInfo.classes[selectedClass]) {
@@ -159,12 +159,12 @@ export default function BookingForm() {
     return dateInfo.is_available && dateInfo.classes[selectedClass].available_seats > 0;
   };
   
-  // Добавляем пассажира
+  // Add passenger
   const addPassenger = () => {
     setPassengers([...passengers, { firstName: "", lastName: "", document: "", type: "adult" }]);
   };
   
-  // Удаляем пассажира
+  // Remove passenger
   const removePassenger = (index) => {
     if (passengers.length > 1) {
       const newPassengers = [...passengers];
@@ -173,14 +173,14 @@ export default function BookingForm() {
     }
   };
   
-  // Обновляем данные пассажира
+  // Update passenger data
   const updatePassenger = (index, field, value) => {
     const newPassengers = [...passengers];
     newPassengers[index] = { ...newPassengers[index], [field]: value };
     setPassengers(newPassengers);
   };
   
-  // Рассчитываем общую стоимость
+  // Calculate total price
   const calculateTotalPrice = () => {
     if (!passengerTypes) return 0;
     
@@ -194,11 +194,11 @@ export default function BookingForm() {
     }, 0);
   };
   
-  // Отправляем форму
+  // Send form
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Проверяем заполнение всех полей
+    // Check if all fields are filled
     const isFormValid = passengers.every(p => 
       p.firstName.trim() !== "" && 
       p.lastName.trim() !== "" && 
@@ -216,21 +216,21 @@ export default function BookingForm() {
       return;
     }
     
-    // Получаем выбранный вагон для класса (первый доступный)
+    // Get selected wagon for class (first available)
     const selectedWagonType = availability?.wagon_types?.find(wt => wt.name === selectedClass);
     const firstAvailableWagon = selectedWagonType?.wagons?.[0];
 
-    // Создаем данные для заказа в формате tickets
+    // Create data for order in tickets format
     const ticketsData = {
       tickets: passengers.map((p, index) => {
-        // Найдем соответствующий тип пассажира
+        // Find corresponding passenger type
         const passengerTypeObj = passengerTypes?.find(pt => pt.code === p.type);
         
         return {
           trip: parseInt(tripId),
-          // Если нет конкретного вагона, используем первый доступный вагон выбранного класса
+          // If there is no specific wagon, use first available wagon of selected class
           wagon: firstAvailableWagon ? parseInt(firstAvailableWagon.id) : null,
-          // Если не выбрано конкретное место, используем временный индекс
+          // If no specific seat is selected, use temporary index
           seat_number: (index + 1),
           passenger_type: passengerTypeObj ? parseInt(passengerTypeObj.id) : 0,
           passenger_name: `${p.firstName} ${p.lastName}`,
@@ -239,22 +239,21 @@ export default function BookingForm() {
       })
     };
     
-    console.log("Sending booking data:", JSON.stringify(ticketsData, null, 2));
     
-    // Отправляем заказ
+    // Send order
     createOrderMutation.mutate(ticketsData);
   };
   
-  // Получаем данные из новой структуры
+  // Get data from new structure
   const getTrainInfo = () => {
-    // Если нет данных о поездке, возвращаем пустые значения
+    // If there is no trip data, return empty values
     if (!trip && !tripInfo) return { name: "", number: "", origin: "", destination: "" };
     
-    // Первым делом используем данные, которые были переданы через location state
-    // Это будут актуальные данные с правильной датой
+    // First, use data that was passed through location state
+    // This will be the actual data with the correct date
     const actualTripInfo = location.state?.tripInfo || trip;
     
-    // В итоге данные берем именно из переданной информации о поездке
+    // In the end, use data from the passed trip information
     return {
       name: actualTripInfo.train_name || "",
       number: actualTripInfo.train_number || "",
@@ -270,7 +269,7 @@ export default function BookingForm() {
   const isLoading = isTripLoading || isAvailabilityLoading || isPassengerTypesLoading || isUserLoading;
   const totalPrice = calculateTotalPrice();
   
-  // Получаем данные о поездке
+  // Get trip data
   const actualTripInfo = trip || tripInfo;
   
   if (isLoading) {

@@ -58,7 +58,6 @@ export default function Header() {
     mutation.mutate();
   };
   
-  // Проверяем, является ли пользователь администратором
   const isAdmin = user && (user.is_staff || user.is_superuser);
   
   return (

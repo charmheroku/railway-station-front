@@ -6,7 +6,6 @@ export default function AdminProtectedPage({ children }) {
   const { isLoggedIn, isLoading, user } = useUser();
   const location = useLocation();
   
-  // Если данные пользователя загружаются, показываем спиннер
   if (isLoading) {
     return (
       <Box
@@ -23,16 +22,14 @@ export default function AdminProtectedPage({ children }) {
     );
   }
   
-  // Если пользователь не авторизован, перенаправляем на страницу входа
   if (!isLoggedIn) {
     return <Navigate to="/admin/login" state={{ from: location.pathname }} replace />;
   }
   
-  // Если пользователь не является администратором, перенаправляем на главную страницу
   if (!(user?.is_staff || user?.is_superuser)) {
     return <Navigate to="/" replace />;
   }
   
-  // Если пользователь авторизован и является администратором, показываем защищенный контент
+  // If user is authorized and is an admin, show protected content
   return children;
 } 

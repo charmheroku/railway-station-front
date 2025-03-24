@@ -41,7 +41,7 @@ import { useUser } from "../lib/useUser";
 import { FaEdit, FaTrash, FaArrowLeft } from "react-icons/fa";
 import axios from "axios";
 
-// Базовый URL API
+// Base API URL
 const API_URL = process.env.NODE_ENV === "development"
   ? "http://127.0.0.1:8000/api/"
   : "https://api.railway-station.com/api/";
@@ -54,7 +54,7 @@ export default function AdminTrains() {
   const [isLoadingTrains, setIsLoadingTrains] = useState(false);
   const [error, setError] = useState(null);
   
-  // Состояние для модального окна создания/редактирования поезда
+  // State for modal window for creating/editing train
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isEditing, setIsEditing] = useState(false);
   const [currentTrain, setCurrentTrain] = useState({
@@ -64,12 +64,12 @@ export default function AdminTrains() {
     train_type: "passenger",
   });
   
-  // Состояние для диалога удаления
+  // State for delete dialog
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [trainToDelete, setTrainToDelete] = useState(null);
   const cancelRef = useRef();
   
-  // Проверяем, является ли пользователь администратором
+  // Check if user is an administrator
   useEffect(() => {
     if (!isLoading && !isLoggedIn) {
       toast({
@@ -95,7 +95,7 @@ export default function AdminTrains() {
     }
   }, [isLoading, isLoggedIn, user, navigate, toast]);
   
-  // Загружаем список поездов
+  // Load list of trains
   const fetchTrains = useCallback(async () => {
     setIsLoadingTrains(true);
     setError(null);
@@ -123,14 +123,14 @@ export default function AdminTrains() {
     }
   }, [toast]);
   
-  // Загружаем поезда при монтировании компонента
+  // Load trains when component is mounted
   useEffect(() => {
     if (isLoggedIn && (user?.is_staff || user?.is_superuser)) {
       fetchTrains();
     }
   }, [isLoggedIn, user, fetchTrains]);
   
-  // Обработчик открытия модального окна для создания поезда
+  // Handler for opening modal window for creating train
   const handleAddTrain = () => {
     setIsEditing(false);
     setCurrentTrain({
@@ -142,7 +142,7 @@ export default function AdminTrains() {
     onOpen();
   };
   
-  // Обработчик открытия модального окна для редактирования поезда
+  // Handler for opening modal window for editing train
   const handleEditTrain = (train) => {
     setIsEditing(true);
     setCurrentTrain({
@@ -154,7 +154,7 @@ export default function AdminTrains() {
     onOpen();
   };
   
-  // Обработчик изменения полей формы
+  // Handler for changing form fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setCurrentTrain({
@@ -163,13 +163,13 @@ export default function AdminTrains() {
     });
   };
   
-  // Обработчик сохранения поезда
+  // Handler for saving train
   const handleSaveTrain = async () => {
     try {
       const token = localStorage.getItem("token");
       
       if (isEditing) {
-        // Обновляем существующий поезд
+        // Update existing train
         await axios.put(
           `${API_URL}station/trains/${currentTrain.id}/`,
           currentTrain,
@@ -188,7 +188,7 @@ export default function AdminTrains() {
           isClosable: true,
         });
       } else {
-        // Создаем новый поезд
+        // Create new train
         await axios.post(
           `${API_URL}station/trains/`,
           currentTrain,
@@ -208,7 +208,7 @@ export default function AdminTrains() {
         });
       }
       
-      // Закрываем модальное окно и обновляем список поездов
+      // Close modal window and update list of trains
       onClose();
       fetchTrains();
     } catch (error) {
@@ -223,13 +223,13 @@ export default function AdminTrains() {
     }
   };
   
-  // Обработчик открытия диалога удаления
+  // Handler for opening delete dialog
   const handleDeleteClick = (train) => {
     setTrainToDelete(train);
     setIsDeleteDialogOpen(true);
   };
   
-  // Обработчик удаления поезда
+  // Handler for deleting train
   const handleDeleteTrain = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -251,7 +251,7 @@ export default function AdminTrains() {
         isClosable: true,
       });
       
-      // Закрываем диалог и обновляем список поездов
+      // Close dialog and update list of trains
       setIsDeleteDialogOpen(false);
       fetchTrains();
     } catch (error) {
@@ -356,7 +356,7 @@ export default function AdminTrains() {
         )}
       </VStack>
       
-      {/* Модальное окно для создания/редактирования поезда */}
+      {/* Modal window for creating/editing train */}
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
@@ -414,7 +414,7 @@ export default function AdminTrains() {
         </ModalContent>
       </Modal>
       
-      {/* Диалог подтверждения удаления */}
+      {/* Delete confirmation dialog */}
       <AlertDialog
         isOpen={isDeleteDialogOpen}
         leastDestructiveRef={cancelRef}

@@ -55,40 +55,40 @@ export default function SeatSelection() {
   const queryClient = useQueryClient();
   const { isLoggedIn, userLoading: isUserLoading } = useUser();
   
-  // Цвета
+  // Colors
   const borderColor = useColorModeValue("gray.200", "gray.600");
   const bgColor = useColorModeValue("white", "gray.700");
   const selectedBgColor = useColorModeValue("blue.50", "blue.900");
   const occupiedBgColor = useColorModeValue("gray.100", "gray.800");
   const selectedBorderColor = useColorModeValue("blue.500", "blue.300");
   
-  // Получаем данные из state
+  // Get data from state
   const [selectedClass, setSelectedClass] = useState(location.state?.selectedClass || "");
   const [selectedDate, setSelectedDate] = useState(location.state?.selectedDate || new Date().toISOString().split("T")[0]);
   const selectedPrice = location.state?.price || 0;
   const passengersCount = location.state?.passengersCount || 1;
   const tripInfo = location.state?.tripInfo || null;
   
-  // Состояния для выбора вагона и мест
+  // States for selecting wagon and seats
   const [selectedWagon, setSelectedWagon] = useState(null);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [passengerData, setPassengerData] = useState([]);
   
-  // Добавляем стейт для хранения текущего ID маршрута
+  // Add state for storing current trip ID
   const [currentTripId, setCurrentTripId] = useState(tripId);
-  // Добавляем стейт для хранения актуальной информации о маршруте
+  // Add state for storing current trip info
   const [currentTripInfo, setCurrentTripInfo] = useState(null);
   
-  // Состояние для модального окна с данными пассажира
+  // State for modal window with passenger data
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [currentSeat, setCurrentSeat] = useState(null);
   const [currentPassenger, setCurrentPassenger] = useState({
     name: "",
     document: "",
-    passengerType: 1 // Используем числовой ID типа пассажира (по умолчанию 1 - взрослый)
+    passengerType: 1 // Use numerical ID of passenger type (default 1 - adult)
   });
   
-  // Получаем информацию о поездке
+  // Get trip info
   const { data: trip, isLoading: isTripLoading } = useQuery(
     ["trip", currentTripId],
     () => getTrip({ queryKey: ["trip", currentTripId] }),
@@ -99,43 +99,37 @@ export default function SeatSelection() {
     }
   );
   
-  // Получаем информацию о доступности
+  // Get availability info
   const { data: availability, isLoading: isAvailabilityLoading, refetch: refetchAvailability, error: availabilityError } = useQuery(
     ["tripAvailability", currentTripId, selectedDate, passengersCount],
     () => {
-      console.log("Requesting availability data with params:", {
-        tripId: currentTripId, date: selectedDate, passengersCount
-      });
       return getTripAvailability(currentTripId, selectedDate, passengersCount);
     },
     {
       enabled: !!currentTripId && !!selectedDate,
-      staleTime: 300000, // Данные считаются свежими в течение 5 минут
-      cacheTime: 600000, // Кэш действителен 10 минут
-      retry: 2, // Допускаем 2 повторные попытки
-      refetchOnWindowFocus: false, // Не обновлять при фокусе окна
-      refetchOnMount: true, // Обновлять при монтировании компонента
+      staleTime: 300000, // Data is considered fresh for 5 minutes
+      cacheTime: 600000, // Cache is valid for 10 minutes
+      retry: 2, // Allow 2 retries
+      refetchOnWindowFocus: false, // Do not update when window is focused
+      refetchOnMount: true, // Update when component is mounted
       onSuccess: (data) => {
-        console.log("Successfully loaded availability data:", data);
         
-        // При успешной загрузке проверяем, нужно ли обновить ID маршрута
+        // After successful loading, check if we need to update the trip ID
         if (data.dates_availability && Array.isArray(data.dates_availability)) {
           const dateInfo = data.dates_availability.find(d => d.departure_date === selectedDate);
           
           if (dateInfo && dateInfo.trip_id) {
-            // Если для выбранной даты указан другой ID маршрута, обновляем его
+            // If for the selected date another trip ID is specified, update it
             if (dateInfo.trip_id !== currentTripId) {
-              console.log(`Updating trip ID from ${currentTripId} to ${dateInfo.trip_id} for date ${selectedDate}`);
               setCurrentTripId(dateInfo.trip_id);
               
-              // Загружаем информацию о новом маршруте
+              // Load info about new trip
               if (dateInfo.trip_info) {
                 setCurrentTripInfo(dateInfo.trip_info);
               } else {
-                // Если информации нет, нужно загрузить ее через API
+                // If there is no info, we need to load it through API
                 getTrip({ queryKey: ["trip", dateInfo.trip_id] })
                   .then(tripData => {
-                    console.log("Loaded new trip info:", tripData);
                     setCurrentTripInfo(tripData);
                   })
                   .catch(error => {
@@ -159,11 +153,11 @@ export default function SeatSelection() {
     }
   );
   
-  // Получаем типы пассажиров
+  // Get passenger types
   const { data: passengerTypes } = useQuery(
     ["passengerTypes"],
     () => {
-      // В реальном приложении используем API
+      // In a real application, we use the API
       return getPassengerTypes();
     },
     {
@@ -171,12 +165,10 @@ export default function SeatSelection() {
     }
   );
   
-  // Используем данные из availability для получения вагонов
+  // Use data from availability to get wagons
   const getWagonsFromAvailability = async () => {
-    console.log("Getting wagons from availability data for trip:", currentTripId);
     
     if (!availability) {
-      console.log("No availability data yet");
       return [];
     }
     
@@ -184,79 +176,47 @@ export default function SeatSelection() {
       const dateInfo = availability.dates_availability.find(d => d.departure_date === selectedDate);
       
       if (dateInfo) {
-        console.log("Found date info for selected date:", dateInfo);
         
         if (dateInfo.trip_id && dateInfo.trip_id !== currentTripId) {
-          console.log(`Updating trip ID from ${currentTripId} to ${dateInfo.trip_id}`);
           setCurrentTripId(dateInfo.trip_id);
           
           if (dateInfo.trip_info) {
             setCurrentTripInfo(dateInfo.trip_info);
           }
         }
-        
-        // Проверяем наличие выбранного класса
-        if (dateInfo.classes && dateInfo.classes[selectedClass]) {
-          const classInfo = dateInfo.classes[selectedClass];
-          console.log("Found class info:", classInfo);
-          
-          // Получаем информацию о вагонах для выбранного класса
-          if (classInfo.wagons && Array.isArray(classInfo.wagons)) {
-            // Если есть массив вагонов, возвращаем его
-            return classInfo.wagons.map(wagon => ({
-              id: wagon.id,
-              number: wagon.number.toString(),
-              type: selectedClass,
-              available_seats: wagon.available_seats,
-              total_seats: wagon.total_seats || 20,
-              type_id: wagon.type_id
-            }));
-          } else {
-            // Если нет массива вагонов, создаем вагоны на основе информации о классе
-            // Предполагаем, что может быть несколько вагонов
-            const wagonsCount = Math.ceil(classInfo.total_seats / 20); // Предполагаем, что в вагоне около 20 мест
-            const wagons = [];
-            
-            for (let i = 0; i < wagonsCount; i++) {
-              const seatsInThisWagon = Math.min(20, classInfo.total_seats - i * 20);
-              const availableSeatsInThisWagon = Math.min(
-                seatsInThisWagon,
-                Math.ceil(classInfo.available_seats * (seatsInThisWagon / classInfo.total_seats))
-              );
-              
-              wagons.push({
-                id: classInfo.wagon_id + i, // Увеличиваем ID для каждого вагона
-                number: (i + 1).toString(),
-                type: selectedClass,
-                available_seats: availableSeatsInThisWagon,
-                total_seats: seatsInThisWagon,
-                type_id: classInfo.type_id
-              });
-            }
-            
-            return wagons;
-          }
+
+        // Get wagons of selected type
+        if (dateInfo.wagons && Array.isArray(dateInfo.wagons)) {
+          const wagonsOfSelectedType = dateInfo.wagons.filter(wagon => wagon.wagon_type === selectedClass);
+
+          return wagonsOfSelectedType.map(wagon => ({
+            id: wagon.wagon_id,
+            number: wagon.wagon_number.toString(),
+            type: wagon.wagon_type,
+            available_seats: wagon.available_seats,
+            total_seats: wagon.total_seats,
+            type_id: availability.wagon_types.find(wt => wt.name === wagon.wagon_type)?.id,
+            price: wagon.price_per_passenger,
+            amenities: wagon.amenities
+          }));
         }
       }
     }
     
-    // Если не удалось получить информацию о вагонах, возвращаем пустой массив
-    console.log("No wagons found in availability data");
     return [];
   };
   
-  // Заменяем запрос на вагоны нашей функцией
   const { data: wagons = [], isLoading: isWagonsLoading, refetch: refetchWagons, status: wagonsStatus, error: wagonsError } = useQuery(
     ["wagons", currentTripId, selectedClass, selectedDate],
     getWagonsFromAvailability,
     {
       enabled: !!currentTripId && !!selectedClass && !!selectedDate && !!availability,
-      staleTime: 300000, // Данные считаются свежими в течение 5 минут
-      cacheTime: 600000, // Кэш действителен 10 минут
+      staleTime: 300000, // Data is considered fresh for 5 minutes
+      cacheTime: 600000, // Cache is valid for 10 minutes
       initialData: [],
-      retry: 2, // Допускаем 2 повторные попытки
-      refetchOnWindowFocus: false, // Не обновлять при фокусе окна
-      refetchOnMount: true, // Обновлять при монтировании компонента
+      retry: 2, // Allow 2 retries
+      refetchOnWindowFocus: false, // Do not update when window is focused
+      refetchOnMount: true, // Update when component is mounted
       onError: (error) => {
         console.error("Failed to load wagons:", error);
         toast({
@@ -270,21 +230,19 @@ export default function SeatSelection() {
     }
   );
 
-  // Автоматически загружаем вагоны при изменении необходимых данных или после получения availability
+  // Automatically load wagons when necessary data changes or after receiving availability
   useEffect(() => {
     if (currentTripId && selectedClass && selectedDate && availability) {
-      console.log("Auto-loading wagons due to data changes or availability update");
       refetchWagons();
     }
   }, [currentTripId, selectedClass, selectedDate, availability, refetchWagons]);
 
-  // Обработка ошибки при загрузке вагонов
+  // Error handling when loading wagons
   useEffect(() => {
     if (wagonsError) {
       console.error("Error loading wagons:", wagonsError);
-      // Через некоторое время автоматически повторяем запрос
+      // After some time, automatically repeat the request
       const errorRetryTimer = setTimeout(() => {
-        console.log("Retrying after error...");
         refetchWagons();
       }, 2000);
       
@@ -292,38 +250,32 @@ export default function SeatSelection() {
     }
   }, [wagonsError, refetchWagons]);
   
-  // Получаем информацию о местах в выбранном вагоне
+  // Get info about seats in selected wagon
   const getSeatsForSelectedWagon = async () => {
-    console.log("getSeatsForSelectedWagon called with wagon:", selectedWagon);
     
     if (!selectedWagon) {
-      console.log("No wagon selected");
       return [];
     }
     
     try {
-      // Получаем данные о местах из API
-      console.log("Fetching seats from API for wagon:", selectedWagon.id, "trip:", currentTripId);
+      // Get data about seats from API
       const response = await getSeatsForWagon(currentTripId, selectedWagon.id, selectedDate);
-      console.log("API response for seats:", response);
       
-      // Проверяем структуру ответа
+      // Check the structure of the response
       if (response && response.seats && Array.isArray(response.seats)) {
-        console.log(`Received ${response.seats.length} seats from API`);
         
-        // Преобразуем данные в нужный формат
+        // Convert data to the desired format
         const formattedSeats = response.seats.map(seat => ({
-          id: seat.number, // Используем номер места как ID
+          id: seat.number, // Use seat number as ID
           number: seat.number.toString(),
-          occupied: !seat.is_available, // Инвертируем is_available для получения occupied
-          price: seat.price // Сохраняем информацию о цене
+          occupied: !seat.is_available, // Invert is_available to get occupied
+          price: seat.price // Save price info
         }));
         
-        console.log("Formatted seats:", formattedSeats);
         return formattedSeats;
       }
       
-      // Если пришли данные в другом формате (массив мест напрямую)
+      // If we received data in another format (direct array of seats)
       if (response && Array.isArray(response) && response.length > 0) {
         return response.map(seat => ({
           id: seat.id || seat.number,
@@ -333,73 +285,64 @@ export default function SeatSelection() {
         }));
       }
       
-      // Если API вернул пустой результат или не массив, создаем тестовые места
+      // If API returned empty result or not an array, create mock seats
       console.warn("API returned invalid or empty seats data, generating mock seats");
       
-      // Генерируем места с предсказуемым распределением занятых мест
+      // Generate seats with predictable distribution of occupied seats
       const totalSeats = selectedWagon.total_seats || 24;
       const availableSeats = selectedWagon.available_seats || 20;
       const occupiedCount = totalSeats - availableSeats;
       
-      console.log(`Generating ${totalSeats} seats with ${occupiedCount} occupied seats`);
       
-      // Создаем массив для отслеживания занятых мест
-      // Используем предсказуемый паттерн: сначала заполняем с конца
+      // Create an array to track occupied seats
+      // Use a predictable pattern: first fill from the end
       const occupiedSeats = new Set();
       
-      // Помечаем последние N мест как занятые
+      // Mark the last N seats as occupied
       for (let i = totalSeats; i > totalSeats - occupiedCount; i--) {
         occupiedSeats.add(i);
       }
       
-      // Создаем места
+      // Create seats
       const mockSeats = [];
       for (let i = 1; i <= totalSeats; i++) {
         mockSeats.push({
           id: i,
           number: i.toString(),
           occupied: occupiedSeats.has(i),
-          price: selectedPrice || 200 // Используем цену из выбранного класса или по умолчанию
+          price: selectedPrice || 200 // Use price from selected class or default
         });
       }
-      
-      console.log("Generated mock seats:", 
-        mockSeats.map(seat => ({
-          number: seat.number,
-          occupied: seat.occupied
-        }))
-      );
       
       return mockSeats;
     } catch (error) {
       console.error("Error fetching seats from API:", error);
       
-      // В случае ошибки тоже создаем тестовые места
-      console.warn("Generating fallback mock seats due to error");
+      // Even in case of an error, create mock seats
       
       const totalSeats = selectedWagon.total_seats || 24;
       const availableSeats = selectedWagon.available_seats || 20;
       const occupiedCount = totalSeats - availableSeats;
       
-      // Создаем массив для отслеживания занятых мест
-      // Используем предсказуемый паттерн: распределяем занятые места через одно
+      // Create an array to track occupied seats
+      // Use a predictable pattern: distribute occupied seats through one
       const occupiedSeats = new Set();
       
-      // Помечаем каждое третье место как занятое, пока не достигнем нужного количества
+      // Mark every third seat as occupied until we reach the desired number
       let count = 0;
       for (let i = 1; count < occupiedCount && i <= totalSeats; i += 3) {
         occupiedSeats.add(i);
         count++;
       }
       
-      // Создаем места
+      // Create seats
       const mockSeats = [];
       for (let i = 1; i <= totalSeats; i++) {
         mockSeats.push({
           id: i,
           number: i.toString(),
           occupied: occupiedSeats.has(i),
-          price: selectedPrice || 200 // Используем цену из выбранного класса или по умолчанию
+          price: selectedPrice || 200 // Use price from selected class or default
         });
       }
       
@@ -407,11 +350,10 @@ export default function SeatSelection() {
     }
   };
   
-  // Мутация для бронирования билетов
+  // Mutation for booking tickets
   const bookTicketsMutation = useMutation(
     (ticketsData) => {
-      console.log("Отправляемые данные:", JSON.stringify(ticketsData, null, 2));
-      // Используем API для бронирования билетов
+      // Use API for booking tickets
       return bookTickets(ticketsData);
     },
     {
@@ -439,7 +381,7 @@ export default function SeatSelection() {
     }
   );
   
-  // Проверяем авторизацию пользователя
+  // Check user authorization
   useEffect(() => {
     if (!isUserLoading && !isLoggedIn) {
       toast({
@@ -455,17 +397,17 @@ export default function SeatSelection() {
   
   // Обработчик выбора места
   const handleSeatClick = (seat) => {
-    // Если место занято, не делаем ничего
+    // If the seat is occupied, do nothing
     if (seat.occupied) return;
     
-    // Если место уже выбрано, отменяем выбор
+    // If the seat is already selected, cancel the selection
     if (selectedSeats.some(s => s.id === seat.id)) {
       setSelectedSeats(selectedSeats.filter(s => s.id !== seat.id));
       setPassengerData(passengerData.filter(p => p.seatId !== seat.id));
       return;
     }
     
-    // Проверяем, что количество выбранных мест не превышает количество пассажиров
+    // Check that the number of selected seats does not exceed the number of passengers
     if (selectedSeats.length >= passengersCount) {
       toast({
         title: "Selection limit reached",
@@ -477,19 +419,24 @@ export default function SeatSelection() {
       return;
     }
     
-    // Добавляем место в выбранные с учетом его цены
-    setSelectedSeats([...selectedSeats, { ...seat, price: seat.price || selectedPrice }]);
+    // Get price from wagon data
+    const wagonData = availability?.dates_availability?.[0]?.wagons
+      ?.find(w => w.wagon_id === selectedWagon.id);
+    const seatPrice = wagonData?.price_per_passenger || seat.price;
+    
+    // Add seat to selected with consideration of its price
+    setSelectedSeats([...selectedSeats, { ...seat, price: seatPrice }]);
     setCurrentSeat(seat);
     setCurrentPassenger({
       name: "",
       document: "",
-      passengerType: 1, // Используем числовой ID типа пассажира (по умолчанию 1 - взрослый)
-      seatPrice: seat.price || selectedPrice // Сохраняем цену места
+      passengerType: 1,
+      seatPrice: seatPrice
     });
     onOpen();
   };
   
-  // Обработчик изменения данных пассажира
+  // Handler for changing passenger data
   const handlePassengerChange = (field, value) => {
     setCurrentPassenger({
       ...currentPassenger,
@@ -497,9 +444,9 @@ export default function SeatSelection() {
     });
   };
   
-  // Обработчик сохранения данных пассажира
+  // Handler for saving passenger data
   const handleSavePassenger = () => {
-    // Проверяем заполнение обязательных полей
+    // Check that all required fields are filled
     if (!currentPassenger.name || !currentPassenger.document) {
       toast({
         title: "Missing information",
@@ -511,30 +458,29 @@ export default function SeatSelection() {
       return;
     }
     
-    console.log("Saving passenger data for seat:", currentSeat, "wagon:", selectedWagon);
     
-    // Получаем цену места (либо из seat, либо из выбранного класса)
+    // Get the price of the seat (either from seat, or from selected class)
     const seatPrice = currentSeat.price || selectedPrice;
     
-    // Добавляем данные пассажира
+    // Add passenger data
     setPassengerData([
       ...passengerData,
       {
         seatId: currentSeat.id,
         seatNumber: currentSeat.number,
-        wagonId: selectedWagon.id, // Используем ID вагона из данных
+        wagonId: selectedWagon.id, // Use wagon ID from data
         wagonNumber: selectedWagon.number,
         passengerName: currentPassenger.name,
         passengerDocument: currentPassenger.document,
         passengerType: currentPassenger.passengerType,
-        price: seatPrice // Сохраняем цену места
+        price: seatPrice // Save seat price
       }
     ]);
     
     onClose();
   };
   
-  // Обработчик редактирования данных пассажира
+  // Handler for editing passenger data
   const handleEditPassenger = (passenger) => {
     const seat = selectedSeats.find(s => s.id === passenger.seatId);
     if (!seat) return;
@@ -548,9 +494,9 @@ export default function SeatSelection() {
     onOpen();
   };
   
-  // Обработчик подтверждения бронирования
+  // Handler for confirming booking
   const handleConfirmBooking = () => {
-    // Проверяем, что для всех выбранных мест заполнены данные пассажиров
+    // Check that all selected seats have passenger data
     if (selectedSeats.length !== passengerData.length) {
       toast({
         title: "Missing passenger data",
@@ -562,19 +508,18 @@ export default function SeatSelection() {
       return;
     }
     
-    // Формируем данные для бронирования с корректными ID
+    // Form data for booking with correct IDs
     const ticketsData = {
       tickets: passengerData.map(passenger => {
-        // Используем ID типа пассажира, который был сохранен
+        // Use passenger type ID that was saved
         let passengerTypeId = parseInt(passenger.passengerType) || 1;
         
-        // Убеждаемся, что passengerTypeId точно число и не NaN
+        // Ensure that passengerTypeId is a number and not NaN
         if (isNaN(passengerTypeId)) {
           console.warn("Invalid passenger type ID, using default (1):", passenger.passengerType);
-          passengerTypeId = 1; // Fallback к 1 (взрослый), если что-то пошло не так
+          passengerTypeId = 1; // Fallback to 1 (adult), if something went wrong
         }
         
-        console.log(`Creating ticket with trip_id=${currentTripId}, wagon_id=${passenger.wagonId}, seat=${passenger.seatNumber}, passenger_type=${passengerTypeId}`);
         
         return {
           trip: parseInt(currentTripId),
@@ -587,17 +532,16 @@ export default function SeatSelection() {
       })
     };
     
-    console.log("Booking data:", JSON.stringify(ticketsData, null, 2));
     
     // Отправляем запрос на бронирование
     bookTicketsMutation.mutate(ticketsData);
   };
   
-  // Получаем актуальные данные о поездке
+  // Get actual trip data
   const actualTrip = currentTripInfo || trip || tripInfo;
   const isLoading = isTripLoading || isWagonsLoading || isUserLoading;
   
-  // Отслеживаем изменение выбранного вагона
+  // Track changes in selected wagon
   useEffect(() => {
     if (selectedWagon) {
       console.log("Wagon selected:", selectedWagon);
@@ -605,7 +549,7 @@ export default function SeatSelection() {
     }
   }, [selectedWagon]);
   
-  // Получаем информацию о местах в выбранном вагоне
+  // Get information about seats in selected wagon
   const { 
     data: seats, 
     isLoading: isSeatsLoading, 
@@ -634,50 +578,40 @@ export default function SeatSelection() {
     }
   );
   
-  // Автоматически загружаем места при изменении выбранного вагона
+  // Automatically load seats when selected wagon changes
   useEffect(() => {
     if (selectedWagon) {
-      console.log("Auto-loading seats for wagon:", selectedWagon.id);
       refetchSeats();
     }
   }, [selectedWagon, refetchSeats]);
   
-  // Первоначальная установка класса вагона по умолчанию из location state
+  // Update useEffect for setting default class
   useEffect(() => {
-    // Если класс не был установлен, и есть доступные классы в данных availability, устанавливаем первый доступный
     if ((!selectedClass || selectedClass === "") && availability) {
       console.log("Setting default class from availability:", availability);
       
-      // Проверяем наличие данных о типах вагонов
       if (availability.wagon_types && availability.wagon_types.length > 0) {
         const firstAvailableClass = availability.wagon_types[0].name;
-        console.log("Setting default class to:", firstAvailableClass);
         setSelectedClass(firstAvailableClass);
-      } 
-      // Проверяем альтернативный формат данных
-      else if (availability.dates_availability && availability.dates_availability.length > 0) {
-        const dateInfo = availability.dates_availability.find(d => {
-          const dateStr = new Date(d.departure_time).toISOString().split('T')[0];
-          return dateStr === selectedDate;
-        });
-        
-        if (dateInfo && dateInfo.classes) {
-          const availableClasses = Object.keys(dateInfo.classes);
-          if (availableClasses.length > 0) {
-            console.log("Setting default class to:", availableClasses[0]);
-            setSelectedClass(availableClasses[0]);
-          }
-        }
-      }
-      // Если в данных нет информации о классах, используем "Normal" по умолчанию
-      else {
-        console.log("No available classes in data, setting default class to 'Normal'");
-        setSelectedClass("Normal");
       }
     }
-  }, [availability, selectedClass, selectedDate]);
+  }, [availability, selectedClass]);
 
-  // Явно выводим все состояния для отладки
+  // Update display of price in booking details
+  const getSelectedClassPrice = () => {
+    if (!availability?.dates_availability?.[0]?.wagons) return selectedPrice;
+    
+    const wagonsOfSelectedType = availability.dates_availability[0].wagons
+      .filter(wagon => wagon.wagon_type === selectedClass);
+    
+    if (wagonsOfSelectedType.length > 0) {
+      return wagonsOfSelectedType[0].total_price;
+    }
+    
+    return selectedPrice;
+  };
+  
+  // Explicitly display all states for debugging
   useEffect(() => {
     console.log("Current state updated:", { 
       selectedClass, 
@@ -689,35 +623,31 @@ export default function SeatSelection() {
     });
   }, [selectedClass, selectedDate, availability, wagons, isWagonsLoading, isAvailabilityLoading]);
   
-  // useEffect с проверкой на наличие wagons
+  // useEffect with check for wagons presence
   useEffect(() => {
     if (availability && !isWagonsLoading && (!wagons || wagons.length === 0)) {
-      console.log("No wagons found, checking availability", availability);
-      // Проверяем доступность других классов
+      // Check availability of other classes
       const allAvailableClasses = availability?.dates_availability
         ?.map(d => Object.keys(d.classes || {}))
         .flat()
         .filter(Boolean);
       
       if (allAvailableClasses && allAvailableClasses.length > 0) {
-        console.log("Available classes:", allAvailableClasses);
         
-        // Если текущий класс не найден, но есть другие классы
+        // If current class is not found, but there are other classes
         if (!allAvailableClasses.includes(selectedClass) && allAvailableClasses[0]) {
-          console.log(`Selected class ${selectedClass} is not available, switching to ${allAvailableClasses[0]}`);
           setSelectedClass(allAvailableClasses[0]);
         }
       }
     }
   }, [wagons, isWagonsLoading, selectedClass, availability]);
   
-  // Обработка ошибки доступности
+  // Error handling for availability
   useEffect(() => {
     if (availabilityError) {
       console.error("Availability error:", availabilityError);
-      // Создаем таймер для повторной попытки
+      // Create a timer for retrying
       const retryTimer = setTimeout(() => {
-        console.log("Retrying availability data fetch...");
         refetchAvailability();
       }, 2000);
       
@@ -725,7 +655,7 @@ export default function SeatSelection() {
     }
   }, [availabilityError, refetchAvailability]);
   
-  // Отображаем спиннер при загрузке
+  // Display spinner when loading
   if (isLoading) {
     return (
       <Box
@@ -742,7 +672,7 @@ export default function SeatSelection() {
     );
   }
   
-  // Отображаем сообщение, если нет данных о поездке
+  // Display message if there is no trip data
   if (!actualTrip) {
     return (
       <Container maxW="container.lg" py={8}>
@@ -757,13 +687,13 @@ export default function SeatSelection() {
     );
   }
   
-  // Отображаем главную страницу выбора мест
+  // Display main page for seat selection
   return (
     <Container maxW="container.xl" py={8}>
       <VStack spacing={8} align="stretch">
         <Heading size="lg">Select Your Seats</Heading>
         
-        {/* Информация о поездке */}
+        {/* Trip information */}
         <Box
           p={6}
           borderWidth="1px"
@@ -805,13 +735,13 @@ export default function SeatSelection() {
               <Text fontWeight="bold">Booking Details</Text>
               <Text mt={2}>Date: {formatDate(selectedDate)}</Text>
               <Text>Class: {selectedClass}</Text>
-              <Text>Total price: ${availability?.dates_availability?.[0]?.classes?.[selectedClass]?.price_for_passengers}</Text>
+              <Text>Total price: ${getSelectedClassPrice()}</Text>
               <Text>Passengers: {passengersCount}</Text>
             </Box>
           </Grid>
         </Box>
         
-        {/* Выбор вагона */}
+        {/* Wagon selection */}
         <Box
           p={6}
           borderWidth="1px"
@@ -843,10 +773,9 @@ export default function SeatSelection() {
                   colorScheme="blue" 
                   leftIcon={<FaSyncAlt />}
                   onClick={() => {
-                    console.log("Manual refresh triggered");
-                    // Запускаем запросы без очистки кэша
+                    // Start requests without clearing cache
                     refetchAvailability().then(() => {
-                      // После получения availability обновляем вагоны
+                      // After getting availability, update wagons
                       setTimeout(() => refetchWagons(), 300);
                     });
                   }}
@@ -907,7 +836,7 @@ export default function SeatSelection() {
           )}
         </Box>
         
-        {/* Схема мест в вагоне */}
+        {/* Seat map in wagon */}
         {selectedWagon && (
           <Box
             p={6}
@@ -928,7 +857,7 @@ export default function SeatSelection() {
               <Text>No seats information available</Text>
             ) : (
               <VStack spacing={6} align="stretch">
-                {/* Легенда */}
+                {/* Legend */}
                 <Flex gap={4} flexWrap="wrap">
                   <HStack>
                     <Box
@@ -967,7 +896,7 @@ export default function SeatSelection() {
                   </HStack>
                 </Flex>
                 
-                {/* Визуализация мест */}
+                {/* Visualization of seats */}
                 <Grid 
                   templateColumns="repeat(auto-fill, minmax(60px, 1fr))" 
                   gap={2}
@@ -1069,7 +998,7 @@ export default function SeatSelection() {
           </Box>
         )}
         
-        {/* Список выбранных мест и пассажиров */}
+        {/* List of selected seats and passengers */}
         {selectedSeats.length > 0 && (
           <Box
             p={6}
@@ -1140,7 +1069,7 @@ export default function SeatSelection() {
                               setCurrentPassenger({
                                 name: "",
                                 document: "",
-                                passengerType: 1, // Используем числовой ID типа пассажира (по умолчанию 1 - взрослый)
+                                passengerType: 1, // Use numerical ID of passenger type (default 1 - adult)
                                 seatPrice: seat.price || selectedPrice
                               });
                               onOpen();
@@ -1156,19 +1085,24 @@ export default function SeatSelection() {
               </Tbody>
             </Table>
             
-            {/* Итоговая сумма заказа */}
+            {/* Total order amount */}
             {selectedSeats.length > 0 && (
               <Box mt={4} p={4} borderWidth="1px" borderRadius="md" borderColor={borderColor} bg={bgColor}>
                 <Flex justify="space-between" align="center">
                   <Text fontWeight="bold">Total:</Text>
-                  <Text fontWeight="bold" fontSize="lg" color="blue.600">
-                    ${selectedSeats.reduce((sum, seat) => {
-                      // Если есть информация о пассажире, используем цену из нее
-                      const passengerInfo = passengerData.find(p => p.seatId === seat.id);
-                      const price = passengerInfo?.price || seat.price || selectedPrice;
-                      return sum + (typeof price === 'number' ? price : parseFloat(price || 0));
-                    }, 0).toFixed(2)}
-                  </Text>
+                  <Box>
+                    <Text fontWeight="bold" fontSize="lg" color="blue.600">
+                      ${selectedSeats.reduce((sum, seat) => {
+                        const passengerInfo = passengerData.find(p => p.seatId === seat.id);
+                        // Use price from seat data or passenger data
+                        const price = passengerInfo?.price || seat.price;
+                        return sum + (price || 0);
+                      }, 0).toFixed(2)}
+                    </Text>
+                    <Text fontSize="sm" color="gray.500" mt={1}>
+                      Total for {selectedSeats.length} passengers
+                    </Text>
+                  </Box>
                 </Flex>
               </Box>
             )}
@@ -1197,7 +1131,7 @@ export default function SeatSelection() {
         )}
       </VStack>
       
-      {/* Модальное окно для заполнения данных пассажира */}
+      {/* Modal window for filling passenger data */}
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
@@ -1229,9 +1163,8 @@ export default function SeatSelection() {
                 <Select
                   value={currentPassenger.passengerType}
                   onChange={(e) => {
-                    // Сохраняем ID типа пассажира
+                    // Save passenger type ID
                     const value = parseInt(e.target.value);
-                    console.log("Selected passenger type ID:", value, typeof value);
                     handlePassengerChange("passengerType", value);
                   }}
                 >

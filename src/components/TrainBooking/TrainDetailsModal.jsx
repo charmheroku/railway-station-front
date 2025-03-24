@@ -31,7 +31,7 @@ export default function TrainDetailsModal({ isOpen, onClose, train }) {
   const bgColor = useColorModeValue("white", "gray.700");
   const highlightBg = useColorModeValue("blue.50", "blue.900");
   
-  // Генерируем даты для выбора (5 дней начиная с текущей даты поезда)
+  //Generate dates for selection (5 days starting from the train's departure date)
   const generateDates = () => {
     if (!train) return [];
     
@@ -46,7 +46,6 @@ export default function TrainDetailsModal({ isOpen, onClose, train }) {
       const month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][date.getMonth()];
       const dayOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][date.getDay()];
       
-      // Случайная доступность для демонстрации
       const isAvailable = Math.random() > 0.2;
       
       dates.push({

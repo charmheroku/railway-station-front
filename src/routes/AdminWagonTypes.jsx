@@ -45,7 +45,7 @@ import { useUser } from "../lib/useUser";
 import { FaEdit, FaTrash, FaArrowLeft } from "react-icons/fa";
 import axios from "axios";
 
-// Базовый URL API
+// Base API URL
 const API_URL = process.env.NODE_ENV === "development"
   ? "http://127.0.0.1:8000/api/"
   : "https://api.railway-station.com/api/";
@@ -58,7 +58,7 @@ export default function AdminWagonTypes() {
   const [isLoadingWagonTypes, setIsLoadingWagonTypes] = useState(false);
   const [error, setError] = useState(null);
   
-  // Состояние для модального окна создания/редактирования типа вагона
+  // State for modal window for creating/editing wagon type
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isEditing, setIsEditing] = useState(false);
   const [currentWagonType, setCurrentWagonType] = useState({
@@ -67,12 +67,12 @@ export default function AdminWagonTypes() {
     fare_multiplier: "1.00",
   });
   
-  // Состояние для диалога удаления
+  // State for delete dialog
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [wagonTypeToDelete, setWagonTypeToDelete] = useState(null);
   const cancelRef = useRef();
   
-  // Проверяем, является ли пользователь администратором
+  // Check if user is an administrator
   useEffect(() => {
     if (!isLoading && !isLoggedIn) {
       toast({
@@ -98,7 +98,7 @@ export default function AdminWagonTypes() {
     }
   }, [isLoading, isLoggedIn, user, navigate, toast]);
   
-  // Загружаем список типов вагонов
+  // Load list of wagon types
   const fetchWagonTypes = useCallback(async () => {
     setIsLoadingWagonTypes(true);
     setError(null);
@@ -126,14 +126,14 @@ export default function AdminWagonTypes() {
     }
   }, [toast]);
   
-  // Загружаем типы вагонов при монтировании компонента
+  // Load wagon types when component is mounted
   useEffect(() => {
     if (isLoggedIn && (user?.is_staff || user?.is_superuser)) {
       fetchWagonTypes();
     }
   }, [isLoggedIn, user, fetchWagonTypes]);
   
-  // Обработчик открытия модального окна для создания типа вагона
+  // Handler for opening modal window for creating wagon type
   const handleAddWagonType = () => {
     setIsEditing(false);
     setCurrentWagonType({
@@ -144,7 +144,7 @@ export default function AdminWagonTypes() {
     onOpen();
   };
   
-  // Обработчик открытия модального окна для редактирования типа вагона
+  // Handler for opening modal window for editing wagon type
   const handleEditWagonType = (wagonType) => {
     setIsEditing(true);
     setCurrentWagonType({
@@ -155,7 +155,7 @@ export default function AdminWagonTypes() {
     onOpen();
   };
   
-  // Обработчик изменения полей формы
+  // Handler for changing form fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setCurrentWagonType({
@@ -164,7 +164,7 @@ export default function AdminWagonTypes() {
     });
   };
   
-  // Обработчик изменения числового поля
+  // Handler for changing numeric field
   const handleNumberInputChange = (name, value) => {
     setCurrentWagonType({
       ...currentWagonType,
@@ -172,13 +172,13 @@ export default function AdminWagonTypes() {
     });
   };
   
-  // Обработчик сохранения типа вагона
+  // Handler for saving wagon type
   const handleSaveWagonType = async () => {
     try {
       const token = localStorage.getItem("token");
       
       if (isEditing) {
-        // Обновляем существующий тип вагона
+        // Update existing wagon type
         await axios.put(
           `${API_URL}station/wagon-types/${currentWagonType.id}/`,
           currentWagonType,
@@ -197,7 +197,7 @@ export default function AdminWagonTypes() {
           isClosable: true,
         });
       } else {
-        // Создаем новый тип вагона
+        // Create new wagon type
         await axios.post(
           `${API_URL}station/wagon-types/`,
           currentWagonType,
@@ -217,7 +217,7 @@ export default function AdminWagonTypes() {
         });
       }
       
-      // Закрываем модальное окно и обновляем список типов вагонов
+      // Close modal window and update list of wagon types
       onClose();
       fetchWagonTypes();
     } catch (error) {
@@ -232,13 +232,13 @@ export default function AdminWagonTypes() {
     }
   };
   
-  // Обработчик открытия диалога удаления
+  // Handler for opening delete dialog
   const handleDeleteClick = (wagonType) => {
     setWagonTypeToDelete(wagonType);
     setIsDeleteDialogOpen(true);
   };
   
-  // Обработчик удаления типа вагона
+  // Handler for deleting wagon type
   const handleDeleteWagonType = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -260,7 +260,7 @@ export default function AdminWagonTypes() {
         isClosable: true,
       });
       
-      // Закрываем диалог и обновляем список типов вагонов
+      // Close dialog and update list of wagon types
       setIsDeleteDialogOpen(false);
       fetchWagonTypes();
     } catch (error) {
@@ -363,7 +363,7 @@ export default function AdminWagonTypes() {
         )}
       </VStack>
       
-      {/* Модальное окно для создания/редактирования типа вагона */}
+      {/* Modal window for creating/editing wagon type */}
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
@@ -417,7 +417,7 @@ export default function AdminWagonTypes() {
         </ModalContent>
       </Modal>
       
-      {/* Диалог подтверждения удаления */}
+      {/* Delete confirmation dialog */}
       <AlertDialog
         isOpen={isDeleteDialogOpen}
         leastDestructiveRef={cancelRef}

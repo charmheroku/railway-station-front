@@ -9,7 +9,7 @@ const instance = axios.create({
     withCredentials: true,
 });
 
-// Добавляем интерцептор для добавления токена к запросам
+// Add interceptor to add token to requests
 instance.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
@@ -21,21 +21,21 @@ instance.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Аутентификация
+// Authentication
 export const login = async (email, password) => {
     try {
         const response = await instance.post('user/token/', { email, password });
-        // Сохраняем токен в localStorage
+        // Save token to localStorage
         localStorage.setItem('token', response.data.access);
 
-        // Получаем информацию о пользователе
+        // Get user information
         const userResponse = await instance.get('user/me/', {
             headers: {
                 Authorization: `Bearer ${response.data.access}`,
             },
         });
 
-        // Сохраняем информацию о пользователе в localStorage
+        // Save user information to localStorage
         localStorage.setItem('user', JSON.stringify(userResponse.data));
 
         return userResponse.data;
@@ -85,7 +85,7 @@ export const getTrip = async ({ queryKey }) => {
     return response.data;
 };
 
-// Получение информации о доступности поездки
+// Getting information about trip availability
 export const getTripAvailability = async (tripId, date, passengersCount = 1) => {
     const response = await instance.get(`station/trips/${tripId}/availability/`, {
         params: {
@@ -127,7 +127,7 @@ export const getPassengerTypes = async () => {
     return response.data;
 };
 
-// Получаем список вагонов для конкретного рейса и класса
+// Getting list of wagons for a specific trip and class
 export const getWagonsForTrip = async (tripId, date, wagonClass) => {
     const response = await instance.get(`station/trips/${tripId}/wagons/`, {
         params: {
@@ -138,7 +138,7 @@ export const getWagonsForTrip = async (tripId, date, wagonClass) => {
     return response.data;
 };
 
-// Получаем информацию о местах в конкретном вагоне
+// Getting information about seats in a specific wagon
 export const getSeatsForWagon = async (tripId, wagonId, date) => {
     const response = await instance.get(`station/trips/${tripId}/wagons/${wagonId}/seats/`, {
         params: {
@@ -148,9 +148,8 @@ export const getSeatsForWagon = async (tripId, wagonId, date) => {
     return response.data;
 };
 
-// Бронирование билетов
+// Booking tickets
 export const bookTickets = async (ticketData) => {
-    console.log("Sending booking data to server:", JSON.stringify(ticketData, null, 2));
     try {
         const response = await instance.post('booking/orders/', ticketData);
         return response.data;
@@ -277,7 +276,7 @@ export const getMockTrips = (origin, destination, date) => {
 };
 
 export const getMockTripAvailability = async (tripId, date) => {
-    // Имитация задержки сети
+    // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 500));
 
     return {
@@ -311,7 +310,7 @@ export const getMockTripAvailability = async (tripId, date) => {
 };
 
 export const getMockPassengerTypes = async () => {
-    // Имитация задержки сети
+    // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 300));
 
     return [
@@ -354,7 +353,7 @@ export const getMockPassengerTypes = async () => {
 };
 
 export const getMockUserOrders = async () => {
-    // Имитация задержки сети
+    // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 700));
 
     return [
@@ -415,7 +414,7 @@ export const getMockUserOrders = async () => {
 };
 
 export const getMockOrder = async (orderId) => {
-    // Имитация задержки сети
+    // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 600));
 
     if (orderId === "ORD-12345") {
@@ -508,12 +507,12 @@ export const getMockOrder = async (orderId) => {
     }
 };
 
-// Моковые данные для разработки
+// Mock data for development
 export const getMockWagonsForTrip = async (tripId, date, wagonClass) => {
-    // Имитация задержки сети
+    // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 300));
 
-    // Возвращаем только один вагон для соответствия реальным данным API
+    // Return only one wagon to match real API data
     return [
         {
             id: 1,
@@ -526,10 +525,10 @@ export const getMockWagonsForTrip = async (tripId, date, wagonClass) => {
 };
 
 export const getMockSeatsForWagon = async (tripId, wagonId, date) => {
-    // Имитация задержки сети
+    // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 300));
 
-    // Генерируем места для вагона
+    // Generate seats for wagon
     const seats = [];
     const totalSeats = 24;
 
@@ -537,21 +536,20 @@ export const getMockSeatsForWagon = async (tripId, wagonId, date) => {
         const isOccupied = Math.random() > 0.7; // 30% мест занято
 
         seats.push({
-            id: i, // Используем простые числовые ID
+            id: i, // Use simple numerical IDs
             number: i,
             occupied: isOccupied
         });
     }
 
-    console.log(`Generated mock seats for wagon ${wagonId}:`, seats);
     return seats;
 };
 
 export const getMockBookTickets = async (ticketsData) => {
-    // Имитация задержки сети
+    // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Имитируем успешное бронирование
+    // Simulate successful booking
     return {
         id: "mock-" + Math.floor(Math.random() * 1000000),
         booking_date: new Date().toISOString(),

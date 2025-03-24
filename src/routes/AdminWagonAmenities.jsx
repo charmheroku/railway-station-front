@@ -41,7 +41,7 @@ import { useUser } from "../lib/useUser";
 import { FaEdit, FaTrash, FaArrowLeft } from "react-icons/fa";
 import axios from "axios";
 
-// Базовый URL API
+// Base API URL
 const API_URL = process.env.NODE_ENV === "development"
   ? "http://127.0.0.1:8000/api/"
   : "https://api.railway-station.com/api/";
@@ -54,7 +54,7 @@ export default function AdminWagonAmenities() {
   const [isLoadingAmenities, setIsLoadingAmenities] = useState(false);
   const [error, setError] = useState(null);
   
-  // Состояние для модального окна создания/редактирования удобства
+  // State for modal window for creating/editing amenity
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isEditing, setIsEditing] = useState(false);
   const [currentAmenity, setCurrentAmenity] = useState({
@@ -63,12 +63,12 @@ export default function AdminWagonAmenities() {
     description: "",
   });
   
-  // Состояние для диалога удаления
+  // State for delete dialog
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [amenityToDelete, setAmenityToDelete] = useState(null);
   const cancelRef = useRef();
   
-  // Проверяем, является ли пользователь администратором
+  // Check if user is an administrator
   useEffect(() => {
     if (!isLoading && !isLoggedIn) {
       toast({
@@ -94,7 +94,7 @@ export default function AdminWagonAmenities() {
     }
   }, [isLoading, isLoggedIn, user, navigate, toast]);
   
-  // Загружаем список удобств
+  // Load list of amenities
   const fetchAmenities = useCallback(async () => {
     setIsLoadingAmenities(true);
     setError(null);
@@ -122,14 +122,14 @@ export default function AdminWagonAmenities() {
     }
   }, [toast]);
   
-  // Загружаем удобства при монтировании компонента
+  // Load amenities when component is mounted
   useEffect(() => {
     if (isLoggedIn && (user?.is_staff || user?.is_superuser)) {
       fetchAmenities();
     }
   }, [isLoggedIn, user, fetchAmenities]);
   
-  // Обработчик открытия модального окна для создания удобства
+  // Handler for opening modal window for creating amenity
   const handleAddAmenity = () => {
     setIsEditing(false);
     setCurrentAmenity({
@@ -140,7 +140,7 @@ export default function AdminWagonAmenities() {
     onOpen();
   };
   
-  // Обработчик открытия модального окна для редактирования удобства
+  // Handler for opening modal window for editing amenity
   const handleEditAmenity = (amenity) => {
     setIsEditing(true);
     setCurrentAmenity({
@@ -151,7 +151,7 @@ export default function AdminWagonAmenities() {
     onOpen();
   };
   
-  // Обработчик изменения полей формы
+  // Handler for changing form fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setCurrentAmenity({
@@ -160,13 +160,13 @@ export default function AdminWagonAmenities() {
     });
   };
   
-  // Обработчик сохранения удобства
+  // Handler for saving amenity
   const handleSaveAmenity = async () => {
     try {
       const token = localStorage.getItem("token");
       
       if (isEditing) {
-        // Обновляем существующее удобство
+        // Update existing amenity
         await axios.put(
           `${API_URL}station/wagon-amenities/${currentAmenity.id}/`,
           currentAmenity,
@@ -185,7 +185,7 @@ export default function AdminWagonAmenities() {
           isClosable: true,
         });
       } else {
-        // Создаем новое удобство
+        // Create new amenity
         await axios.post(
           `${API_URL}station/wagon-amenities/`,
           currentAmenity,
@@ -205,7 +205,7 @@ export default function AdminWagonAmenities() {
         });
       }
       
-      // Закрываем модальное окно и обновляем список удобств
+      // Close modal window and update list of amenities
       onClose();
       fetchAmenities();
     } catch (error) {
@@ -220,13 +220,13 @@ export default function AdminWagonAmenities() {
     }
   };
   
-  // Обработчик открытия диалога удаления
+  // Handler for opening delete dialog
   const handleDeleteClick = (amenity) => {
     setAmenityToDelete(amenity);
     setIsDeleteDialogOpen(true);
   };
   
-  // Обработчик удаления удобства
+  // Handler for deleting amenity
   const handleDeleteAmenity = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -248,7 +248,7 @@ export default function AdminWagonAmenities() {
         isClosable: true,
       });
       
-      // Закрываем диалог и обновляем список удобств
+      // Close dialog and update list of amenities
       setIsDeleteDialogOpen(false);
       fetchAmenities();
     } catch (error) {
@@ -351,7 +351,7 @@ export default function AdminWagonAmenities() {
         )}
       </VStack>
       
-      {/* Модальное окно для создания/редактирования удобства */}
+      {/* Modal window for creating/editing amenity */}
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
@@ -398,7 +398,7 @@ export default function AdminWagonAmenities() {
         </ModalContent>
       </Modal>
       
-      {/* Диалог подтверждения удаления */}
+      {/* Delete confirmation dialog */}
       <AlertDialog
         isOpen={isDeleteDialogOpen}
         leastDestructiveRef={cancelRef}

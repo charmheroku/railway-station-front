@@ -48,7 +48,7 @@ import { useUser } from "../lib/useUser";
 import { FaEdit, FaTrash, FaArrowLeft } from "react-icons/fa";
 import axios from "axios";
 
-// Базовый URL API
+// Base API URL
 const API_URL = process.env.NODE_ENV === "development"
   ? "http://127.0.0.1:8000/api/"
   : "https://api.railway-station.com/api/";
@@ -67,7 +67,7 @@ export default function AdminWagons() {
   const [isLoadingAmenities, setIsLoadingAmenities] = useState(false);
   const [error, setError] = useState(null);
   
-  // Состояние для модального окна создания/редактирования вагона
+  // State for modal window for creating/editing wagon
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isEditing, setIsEditing] = useState(false);
   const [currentWagon, setCurrentWagon] = useState({
@@ -79,12 +79,12 @@ export default function AdminWagons() {
     amenities: []
   });
   
-  // Состояние для диалога удаления
+  // State for delete dialog
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [wagonToDelete, setWagonToDelete] = useState(null);
   const cancelRef = useRef();
   
-  // Проверяем, является ли пользователь администратором
+  // Check if user is an administrator
   useEffect(() => {
     if (!isLoading && !isLoggedIn) {
       toast({
@@ -110,7 +110,7 @@ export default function AdminWagons() {
     }
   }, [isLoading, isLoggedIn, user, navigate, toast]);
   
-  // Загружаем список вагонов
+  // Load list of wagons
   const fetchWagons = useCallback(async () => {
     setIsLoadingWagons(true);
     setError(null);
@@ -122,7 +122,6 @@ export default function AdminWagons() {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log("Wagons data:", response.data);
       setWagons(response.data);
     } catch (error) {
       console.error("Error fetching wagons:", error);
@@ -139,7 +138,7 @@ export default function AdminWagons() {
     }
   }, [toast]);
   
-  // Загружаем список поездов
+  // Load list of trains
   const fetchTrains = useCallback(async () => {
     setIsLoadingTrains(true);
     
@@ -150,7 +149,6 @@ export default function AdminWagons() {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log("Trains data:", response.data);
       setTrains(response.data);
     } catch (error) {
       console.error("Error fetching trains:", error);
@@ -166,7 +164,7 @@ export default function AdminWagons() {
     }
   }, [toast]);
   
-  // Загружаем список типов вагонов
+  // Load list of wagon types
   const fetchWagonTypes = useCallback(async () => {
     setIsLoadingWagonTypes(true);
     
@@ -177,7 +175,6 @@ export default function AdminWagons() {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log("Wagon types data:", response.data);
       setWagonTypes(response.data);
     } catch (error) {
       console.error("Error fetching wagon types:", error);
@@ -193,7 +190,7 @@ export default function AdminWagons() {
     }
   }, [toast]);
   
-  // Загружаем список удобств
+  // Load list of amenities
   const fetchAmenities = useCallback(async () => {
     setIsLoadingAmenities(true);
     
@@ -204,7 +201,6 @@ export default function AdminWagons() {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log("Amenities data:", response.data);
       setAmenities(response.data);
     } catch (error) {
       console.error("Error fetching amenities:", error);
@@ -220,7 +216,7 @@ export default function AdminWagons() {
     }
   }, [toast]);
   
-  // Загружаем данные при монтировании компонента
+  // Load data when component is mounted
   useEffect(() => {
     if (isLoggedIn && (user?.is_staff || user?.is_superuser)) {
       fetchWagons();
@@ -230,7 +226,7 @@ export default function AdminWagons() {
     }
   }, [isLoggedIn, user, fetchWagons, fetchTrains, fetchWagonTypes, fetchAmenities]);
   
-  // Обработчик открытия модального окна для создания вагона
+  // Handler for opening modal window for creating wagon
   const handleAddWagon = () => {
     setIsEditing(false);
     setCurrentWagon({
@@ -244,26 +240,24 @@ export default function AdminWagons() {
     onOpen();
   };
   
-  // Обработчик редактирования вагона
+  // Handler for editing wagon
   const handleEditWagon = (wagon) => {
     setIsEditing(true);
     
-    console.log("Editing wagon:", wagon);
-    console.log("Wagon amenities:", wagon.amenities);
     
-    // Получаем ID поезда и типа вагона
+    // Get ID of train and wagon type
     let trainId = "";
     let wagonTypeId = "";
     let amenityIds = [];
     
-    // Если у нас есть объект train
+    // If we have object train
     if (wagon.train && typeof wagon.train === 'object') {
       trainId = wagon.train.id;
     } else {
       trainId = wagon.train;
     }
     
-    // Для типа вагона - если это строка, ищем соответствующий тип в списке
+    // For wagon type - if it's a string, find corresponding type in list
     if (typeof wagon.wagon_type === 'string') {
       const matchingType = wagonTypes.find(wt => wt.name === wagon.wagon_type);
       if (matchingType) {
@@ -275,50 +269,42 @@ export default function AdminWagons() {
       wagonTypeId = wagon.wagon_type;
     }
     
-    // Для удобств - обрабатываем разные форматы данных
+    // For amenities - process different data formats
     if (wagon.amenities && Array.isArray(wagon.amenities)) {
-      console.log("Processing amenities:", wagon.amenities);
       
-      // Если массив содержит объекты с id и name
+      // If array contains objects with id and name
       if (wagon.amenities.length > 0 && typeof wagon.amenities[0] === 'object' && wagon.amenities[0].id) {
-        console.log("Amenities are objects with id");
         amenityIds = wagon.amenities
           .filter(amenity => amenity !== null && amenity !== undefined)
           .map(amenity => parseInt(amenity.id))
           .filter(id => !isNaN(id));
       } 
-      // Если массив содержит строки (названия удобств)
+      // If array contains strings (amenity names)
       else if (wagon.amenities.length > 0 && typeof wagon.amenities[0] === 'string') {
-        console.log("Amenities are strings, finding matching IDs");
         amenityIds = wagon.amenities
           .map(amenityName => {
             const matchingAmenity = amenities.find(a => a.name === amenityName);
             if (matchingAmenity) {
-              console.log(`Found matching amenity for ${amenityName}:`, matchingAmenity);
               return matchingAmenity.id;
             }
             return null;
           })
           .filter(id => id !== null);
       }
-      // Если массив содержит числа (ID удобств)
+      // If array contains numbers (amenity IDs)
       else if (wagon.amenities.length > 0 && typeof wagon.amenities[0] === 'number') {
-        console.log("Amenities are numbers");
         amenityIds = wagon.amenities.filter(id => !isNaN(id));
       }
-      // Если массив пустой, проверяем, есть ли у вагона поле amenity_ids
+      // If array is empty, check if wagon has amenity_ids field
       else if (wagon.amenities.length === 0 && wagon.amenity_ids && Array.isArray(wagon.amenity_ids)) {
-        console.log("Using amenity_ids instead:", wagon.amenity_ids);
         amenityIds = wagon.amenity_ids.map(id => parseInt(id)).filter(id => !isNaN(id));
       }
       
-      console.log("Processed amenity IDs:", amenityIds);
     }
     
-    // Если у вагона есть поле amenity_ids, но нет поля amenities
+    // If wagon has amenity_ids field, but no amenities field
     if ((!wagon.amenities || wagon.amenities.length === 0) && 
         wagon.amenity_ids && Array.isArray(wagon.amenity_ids)) {
-      console.log("Using amenity_ids field:", wagon.amenity_ids);
       amenityIds = wagon.amenity_ids.map(id => parseInt(id)).filter(id => !isNaN(id));
     }
     
@@ -331,13 +317,12 @@ export default function AdminWagons() {
       amenities: amenityIds,
     };
     
-    console.log("Updated wagon state:", updatedWagon);
     
     setCurrentWagon(updatedWagon);
     onOpen();
   };
   
-  // Обработчик изменения полей формы
+  // Handler for changing form fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setCurrentWagon({
@@ -346,7 +331,7 @@ export default function AdminWagons() {
     });
   };
   
-  // Обработчик изменения числового поля вместимости
+  // Handler for changing numeric field capacity
   const handleCapacityChange = (value) => {
     setCurrentWagon({
       ...currentWagon,
@@ -354,30 +339,25 @@ export default function AdminWagons() {
     });
   };
   
-  // Обработчик изменения удобств
+  // Handler for changing amenities
   const handleAmenityChange = (amenityId) => {
-    console.log("Amenity change:", amenityId);
-    console.log("Current amenities:", currentWagon.amenities);
     
-    // Преобразуем amenityId в строку для сравнения
+    // Convert amenityId to string for comparison
     const amenityIdStr = String(amenityId);
     
-    // Проверяем, есть ли уже это удобство в списке (сравниваем как строки)
+    // Check if amenity is already in list (compare as strings)
     const isSelected = currentWagon.amenities.some(id => String(id) === amenityIdStr);
-    console.log("Is selected:", isSelected);
     
     if (isSelected) {
-      // Если удобство уже выбрано, удаляем его
+      // If amenity is already selected, remove it
       const updatedAmenities = currentWagon.amenities.filter(id => String(id) !== amenityIdStr);
-      console.log("Updated amenities (after removal):", updatedAmenities);
       setCurrentWagon({
         ...currentWagon,
         amenities: updatedAmenities
       });
     } else {
-      // Если удобство не выбрано, добавляем его
+      // If amenity is not selected, add it
       const updatedAmenities = [...currentWagon.amenities, parseInt(amenityId)];
-      console.log("Updated amenities (after addition):", updatedAmenities);
       setCurrentWagon({
         ...currentWagon,
         amenities: updatedAmenities
@@ -385,9 +365,9 @@ export default function AdminWagons() {
     }
   };
   
-  // Обработчик сохранения вагона
+  // Handler for saving wagon
   const handleSaveWagon = async () => {
-    // Проверяем, что все обязательные поля заполнены
+    // Check if all required fields are filled
     if (!currentWagon.train || !currentWagon.wagon_type || !currentWagon.number) {
       toast({
         title: "Error",
@@ -399,7 +379,7 @@ export default function AdminWagons() {
       return;
     }
     
-    // Преобразуем amenities в массив чисел для отправки на сервер
+    // Convert amenities to array of numbers for sending to server
     const amenityIds = currentWagon.amenities
       .filter(id => id !== null && id !== undefined && id !== "")
       .map(id => {
@@ -408,7 +388,6 @@ export default function AdminWagons() {
       })
       .filter(id => id !== null);
     
-    console.log("Saving wagon with amenities:", amenityIds);
     
     try {
       const token = localStorage.getItem("token");
@@ -420,10 +399,9 @@ export default function AdminWagons() {
         amenities: amenityIds,
       };
       
-      console.log("Sending wagon data:", wagonData);
       
       if (isEditing) {
-        // Обновляем существующий вагон
+        // Update existing wagon
         await axios.put(`${API_URL}station/wagons/${currentWagon.id}/`, wagonData, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -437,7 +415,7 @@ export default function AdminWagons() {
           isClosable: true,
         });
       } else {
-        // Создаем новый вагон
+        // Create new wagon
         await axios.post(`${API_URL}station/wagons/`, wagonData, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -452,18 +430,17 @@ export default function AdminWagons() {
         });
       }
       
-      // Закрываем модальное окно и обновляем список вагонов
+      // Close modal window and update list of wagons
       onClose();
       fetchWagons();
     } catch (error) {
       console.error("Error saving wagon:", error);
       
-      // Показываем детальную информацию об ошибке, если она доступна
+      // Show detailed error information if available
       const errorMessage = error.response?.data?.detail || 
                           error.response?.data?.message || 
                           "Failed to save wagon. Please try again.";
       
-      console.log("Error details:", error.response?.data);
       
       toast({
         title: "Error",
@@ -475,13 +452,13 @@ export default function AdminWagons() {
     }
   };
   
-  // Обработчик открытия диалога удаления
+  // Handler for opening delete dialog
   const handleDeleteClick = (wagon) => {
     setWagonToDelete(wagon);
     setIsDeleteDialogOpen(true);
   };
   
-  // Обработчик удаления вагона
+  // Handler for deleting wagon
   const handleDeleteWagon = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -503,7 +480,7 @@ export default function AdminWagons() {
         isClosable: true,
       });
       
-      // Закрываем диалог и обновляем список вагонов
+      // Close dialog and update list of wagons
       setIsDeleteDialogOpen(false);
       fetchWagons();
     } catch (error) {
@@ -627,7 +604,7 @@ export default function AdminWagons() {
         )}
       </VStack>
       
-      {/* Модальное окно для создания/редактирования вагона */}
+      {/* Modal window for creating/editing wagon */}
       <Modal isOpen={isOpen} onClose={onClose} size="lg">
         <ModalOverlay />
         <ModalContent>
@@ -705,16 +682,13 @@ export default function AdminWagons() {
                     <Text>No amenities available</Text>
                   ) : (
                     amenities.map((amenity) => {
-                      console.log("Rendering amenity checkbox:", amenity);
-                      console.log("Current wagon amenities:", currentWagon.amenities);
                       
-                      // Преобразуем ID удобства в строку для более надежного сравнения
+                      // Convert amenity ID to string for more reliable comparison
                       const amenityIdStr = String(amenity.id);
                       const isChecked = currentWagon.amenities.some(id => 
                         String(id) === amenityIdStr
                       );
                       
-                      console.log(`Amenity ${amenity.name} (${amenity.id}) is checked:`, isChecked);
                       return (
                         <Checkbox
                           key={amenity.id}
@@ -753,7 +727,7 @@ export default function AdminWagons() {
         </ModalContent>
       </Modal>
       
-      {/* Диалог подтверждения удаления */}
+      {/* Delete confirmation dialog */}
       <AlertDialog
         isOpen={isDeleteDialogOpen}
         leastDestructiveRef={cancelRef}
