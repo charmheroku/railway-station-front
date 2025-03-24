@@ -39,6 +39,7 @@ export default function TripDetail() {
   
   const cardBg = useColorModeValue("white", "gray.700");
   const borderColor = useColorModeValue("gray.200", "gray.600");
+  const bgHighlight = useColorModeValue("gray.50", "gray.800");
   
   if (isLoading) {
     return (
@@ -167,7 +168,7 @@ export default function TripDetail() {
               align="stretch"
               justify="space-between"
               p={4}
-              bg={useColorModeValue("gray.50", "gray.800")}
+              bg={bgHighlight}
               borderRadius="md"
             >
               <VStack align="stretch" spacing={4}>
